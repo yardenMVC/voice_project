@@ -1,0 +1,510 @@
+### ============================================================
+###  VOICE Backend - HTTP Tests - Full Suite
+###  כולל: Auth | Users | Analysis | Voice Detection
+###
+###  סדר הרצה מומלץ:
+###    1.  Login admin  → העתק accessToken → @adminToken
+###    2.  Login user   → העתק accessToken → @userToken + @refreshToken
+###    3.  כל שאר הבדיקות לפי סדר המספרים
+### ============================================================
+
+@baseUrl = http://localhost:8080
+
+### ─── העתק טוקנים כאן אחרי Login ─────────────────────────
+@adminToken   = PASTE_ADMIN_ACCESS_TOKEN_HERE
+@userToken    = PASTE_USER_ACCESS_TOKEN_HERE
+@refreshToken = PASTE_REFRESH_TOKEN_HERE
+@createdUserId = PASTE_CREATED_USER_ID_HERE
+@analysisId    = PASTE_ANALYSIS_ID_HERE
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 1 │ AUTHENTICATION
+### ════════════════════════════════════════════════════════════
+###
+
+### 1.1  Login - Admin ✅ (צפוי: 200 + accessToken + refreshToken)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+
+### 1.2  Login - User רגיל ✅ (צפוי: 200 + accessToken + refreshToken)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### 1.3  Login - סיסמה שגויה ❌ (צפוי: 401 Unauthorized)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+###
+
+### 1.4  Login - משתמש לא קיים ❌ (צפוי: 401 Unauthorized)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "ghost_user",
+  "password": "doesntmatter"
+}
+
+###
+
+### 1.5  Login - ולידציה: שדות ריקים ❌ (צפוי: 400 Bad Request)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+###
+
+### 1.6  Refresh Token תקין ✅ (צפוי: 200 + accessToken + refreshToken חדשים)
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### 1.7  Refresh Token מזויף ❌ (צפוי: 401 Unauthorized)
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "this.is.a.fake.refresh.token"
+}
+
+###
+
+### 1.8  Refresh Token - גוף ריק ❌ (צפוי: 400 Bad Request)
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": ""
+}
+
+###
+
+### 1.9  Logout תקין ✅ (צפוי: 204 No Content - הטוקן נכנס ל-Blacklist)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{userToken}}
+
+###
+
+### 1.10  שימוש בטוקן אחרי Logout ❌ (צפוי: 401 - Blacklisted)
+###        ⚠ הרץ מייד אחרי 1.9 עם אותו userToken
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 2 │ USER MANAGEMENT
+### ════════════════════════════════════════════════════════════
+###  ⚠ צריך adminToken מ-1.1 להרצה תקינה
+###
+
+### 2.1  GET כל המשתמשים - Admin ✅ (צפוי: 200 + List<UserDto>)
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.2  GET כל המשתמשים - User רגיל ✅ (צפוי: 200 - USER מורשה ל-GET)
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+###
+
+### 2.3  GET משתמש לפי ID=1 ✅ (צפוי: 200 + UserDto)
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.4  GET משתמש - ID לא קיים ❌ (צפוי: 404 Not Found)
+GET {{baseUrl}}/api/users/9999
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.5  GET ללא טוקן ❌ (צפוי: 401 Unauthorized)
+GET {{baseUrl}}/api/users
+
+###
+
+### 2.6  GET עם טוקן מזויף ❌ (צפוי: 401 Unauthorized)
+GET {{baseUrl}}/api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.fake.signature
+
+###
+
+### 2.7  POST יצירת משתמש - Admin ✅ (צפוי: 201 Created)
+###       שמור את ה-id שמתקבל → @createdUserId
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "testuser_new",
+  "email": "testuser@voice.ai",
+  "roles": []
+}
+
+###
+
+### 2.8  POST יצירת משתמש - User רגיל ❌ (צפוי: 403 Forbidden)
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "should_fail",
+  "email": "fail@voice.ai",
+  "roles": []
+}
+
+###
+
+### 2.9  POST ולידציה: email לא תקין ❌ (צפוי: 400 Bad Request)
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "validname",
+  "email": "not-an-email",
+  "roles": []
+}
+
+###
+
+### 2.10  PUT עדכון משתמש - Admin ✅ (צפוי: 200 + UserDto מעודכן)
+PUT {{baseUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "testuser_updated",
+  "email": "updated@voice.ai",
+  "roles": []
+}
+
+###
+
+### 2.11  PUT עדכון - User רגיל ❌ (צפוי: 403 Forbidden)
+PUT {{baseUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "hack_attempt",
+  "email": "hack@voice.ai",
+  "roles": []
+}
+
+###
+
+### 2.12  PUT עדכון - ID לא קיים ❌ (צפוי: 404 Not Found)
+PUT {{baseUrl}}/api/users/9999
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "ghost",
+  "email": "ghost@voice.ai",
+  "roles": []
+}
+
+###
+
+### 2.13  DELETE מחיקת המשתמש שנוצר - Admin ✅ (צפוי: 204 No Content)
+DELETE {{baseUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.14  DELETE שנייה של אותו ID ❌ (צפוי: 404 Not Found)
+DELETE {{baseUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.15  DELETE - User רגיל ❌ (צפוי: 403 Forbidden)
+DELETE {{baseUrl}}/api/users/1
+Authorization: Bearer {{userToken}}
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 3 │ VOICE ANALYSIS - HAPPY PATH
+### ════════════════════════════════════════════════════════════
+###
+###  ⚠  IntelliJ / HTTP Client: לחץ על האייקון של ה-file picker
+###     ובחר קובץ WAV / MP3 אמיתי.
+###
+###  ⚠  curl: הרץ מחוץ לקובץ זה:
+###     curl -X POST http://localhost:8080/api/analysis/upload \
+###       -H "Authorization: Bearer <TOKEN>" \
+###       -F "file=@/path/to/test_audio.wav"
+###
+
+### 3.1  ─── Upload קובץ WAV - User ✅ (צפוי: 200 + AnalysisResponse)
+###       Expected response:
+###       {
+###         "analysisId": 1,
+###         "finalPrediction": "REAL" | "FAKE",
+###         "autoencoderScore": 0.12,
+###         "rbmScore": 0.08,
+###         "featuresVector": {
+###           "mfcc_mean": [...],
+###           "mfcc_std":  [...],
+###           "jitter":    0.003,
+###           "shimmer":   0.04,
+###           "pitch_mean": 180.5,
+###           "pitch_std":  12.3,
+###           "energy_mean": 0.45,
+###           "spectral_flatness": 0.11,
+###           "reverberation": 0.07
+###         },
+###         "originalFilename": "test_audio.wav",
+###         "analyzedAt": "2026-03-19T14:30:00"
+###       }
+###       שמור את analysisId → @analysisId
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_audio.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+###
+
+### 3.2  Upload קובץ MP3 - User ✅ (צפוי: 200 + AnalysisResponse)
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_audio.mp3"
+Content-Type: audio/mpeg
+
+< ./test_files/test_fake.mp3
+--VoiceBoundary--
+
+###
+
+### 3.3  Upload קובץ WAV - Admin ✅ (צפוי: 200 + AnalysisResponse)
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="admin_test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 4 │ VOICE ANALYSIS - NEGATIVE TESTS (שגיאות)
+### ════════════════════════════════════════════════════════════
+###
+
+### 4.1  Upload ללא Token ❌ (צפוי: 401 Unauthorized)
+POST {{baseUrl}}/api/analysis/upload
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+###
+
+### 4.2  Upload קובץ PDF ❌ (צפוי: 400 Bad Request - סוג קובץ לא חוקי)
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="not_audio.pdf"
+Content-Type: application/pdf
+
+< ./test_files/dummy.pdf
+--VoiceBoundary--
+
+###
+
+### 4.3  Upload קובץ ריק ❌ (צפוי: 400 Bad Request - קובץ ריק)
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="empty.wav"
+Content-Type: audio/wav
+
+--VoiceBoundary--
+
+###
+
+### 4.4  Upload ללא שדה "file" ❌ (צפוי: 400 Bad Request - שדה חסר)
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="wrong_field_name"; filename="test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 5 │ ANALYSIS HISTORY
+### ════════════════════════════════════════════════════════════
+###
+
+### 5.1  קבל היסטוריית ניתוח - User ✅ (צפוי: 200 + List<AnalysisResponse> ממוין לפי תאריך)
+###       מחזיר רק את הניתוחים של המשתמש המחובר (מחלץ username מה-JWT)
+GET {{baseUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### 5.2  קבל היסטוריה - Admin ✅ (צפוי: 200 + List<AnalysisResponse> של Admin)
+GET {{baseUrl}}/api/analysis/history
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.3  היסטוריה ללא Token ❌ (צפוי: 401 Unauthorized)
+GET {{baseUrl}}/api/analysis/history
+
+###
+
+### 5.4  היסטוריה - User חדש שעדיין לא ניתח כלום ✅
+###       (צפוי: 200 + [] רשימה ריקה)
+###       ⚠ צור משתמש חדש (2.7), כנס איתו ותקבל טוקן טרי
+GET {{baseUrl}}/api/analysis/history
+Authorization: Bearer PASTE_NEW_USER_TOKEN_HERE
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 6 │  PYTHON INTEGRATION - בדיקות ידניות
+### ════════════════════════════════════════════════════════════
+###  הבדיקות האלה אינן HTTP - הן להרצה ישירה ב-Terminal
+###  כדי לאמת שהסקריפט עצמו עובד לפני שמחברים לשרת
+###
+###  # 6.1 התקן תלויות
+###  pip install -r ml/requirements.txt
+###
+###  # 6.2 הרץ על קובץ אמיתי
+###  python3 ml/Deepfake_ml_trainer.py /path/to/real_voice.wav
+###  # צפוי stdout:
+###  # {"final_prediction":"REAL","model_scores":{"autoencoder":0.05,"rbm":0.03},...}
+###  # צפוי exit code: 0
+###
+###  # 6.3 הרץ על קובץ מזויף
+###  python3 ml/Deepfake_ml_trainer.py /path/to/deepfake.wav
+###  # צפוי stdout:
+###  # {"final_prediction":"FAKE","model_scores":{"autoencoder":0.87,"rbm":0.91},...}
+###
+###  # 6.4 קובץ לא קיים
+###  python3 ml/Deepfake_ml_trainer.py /nonexistent.wav
+###  # צפוי exit code: 2
+###
+###  # 6.5 ולידציה של מבנה ה-JSON (Python one-liner)
+###  python3 ml/Deepfake_ml_trainer.py test.wav | python3 -c "
+###  import sys, json
+###  data = json.load(sys.stdin)
+###  assert data['final_prediction'] in ('REAL','FAKE')
+###  assert 'autoencoder' in data['model_scores']
+###  assert 'rbm'         in data['model_scores']
+###  assert 'mfcc_mean'   in data['features_vector']
+###  print('JSON structure OK')
+###  "
+###
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 7 │ FLOW - FULL FRONTEND SIMULATION
+### ════════════════════════════════════════════════════════════
+###  מדמה את מה שה-React frontend עושה מהתחלה ועד סוף:
+###  login → upload → history → logout
+###
+###  הרץ לפי הסדר הנ"ל, ועדכן טוקנים בין כל שלב
+###
+
+### 7.1  שלב 1/4 - Frontend: Login ✅
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### 7.2  שלב 2/4 - Frontend: שליחת קובץ לניתוח ✅
+###       ⚠ עדכן את userToken מתגובת 7.1
+POST {{baseUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=FrontendBoundary
+
+--FrontendBoundary
+Content-Disposition: form-data; name="file"; filename="my_voice.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--FrontendBoundary--
+
+###
+
+### 7.3  שלב 3/4 - Frontend: קבל היסטוריה להצגה בדף ✅
+GET {{baseUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### 7.4  שלב 4/4 - Frontend: Logout ✅ (צפוי: 204 No Content)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{userToken}}

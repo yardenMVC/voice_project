@@ -1,0 +1,593 @@
+### ============================================================
+###  VOICE — Full Test Suite (Self-contained)
+###  Flask | Backend | Integration | System Flows
+###
+###  הגדר רק את הפרטים הבאים לפני הרצה:
+###  ┌─────────────────────────────────────────────────────┐
+###  │  @adminUser     = "ADMIN"               │
+###  │  @adminPass     = סיסמת אדמין                      │
+###  │  @regularUser   = שם משתמש רגיל                    │
+###  │  @regularPass   = סיסמת משתמש רגיל                 │
+###  │  @testAudioFile = נתיב מלא לקובץ שמע לבדיקה        │
+###  └─────────────────────────────────────────────────────┘
+###
+###  סדר הרצה:
+###    1. הפעל Flask:        python flask/app.py   (פורט 5001)
+###    2. הפעל Spring Boot:  mvn spring-boot:run   (פורט 8080)
+###    3. הרץ Section 0 (בריאות)
+###    4. הרץ 1.1 (login admin)  → IntelliJ שומר adminToken אוטומטית
+###    5. הרץ 1.2 (login user)   → IntelliJ שומר userToken אוטומטית
+###    6. הרץ את שאר הבדיקות לפי סדר
+###
+###  ⚡ IntelliJ HTTP Client שומר תגובות ב-variables אוטומטית
+###     אין צורך להעתיק טוקנים ידנית!
+### ============================================================
+
+### ── הגדר כאן את הפרטים שלך ──────────────────────────────
+@backendUrl    = http://localhost:8080
+@flaskUrl      = http://localhost:5001
+
+@adminUser     = admin
+@adminPass     = admin123
+
+@regularUser   = user
+@regularPass   = user123
+
+@testAudioFile = C:/Users/yarde/dataset/REAL_COMBINED/cv_0004ce34_common_voice_en_19612777.mp3
+
+### ───────────────────────────────────────────────────────────
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 0 │ HEALTH CHECKS
+###  בדוק שכל השרתים רצים לפני כל דבר אחר
+### ════════════════════════════════════════════════════════════
+
+### 0.1  Flask רץ ✅ (צפוי: 200 + ready: true + auc_roc)
+GET {{flaskUrl}}/health
+
+###
+
+### 0.2  Backend רץ ✅ (צפוי: 200 — endpoint פומבי)
+GET {{backendUrl}}/api/stats
+
+###
+
+### 0.3  Flask — ניתוח ישיר (ML בלבד, ללא Java) ✅
+###       צפוי: 200 + { final_prediction, model_scores, ensemble_score,
+###                      active_features, processing_time_ms }
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "file_path": "{{testAudioFile}}"
+}
+
+###
+
+### 0.4  Flask — קובץ לא קיים ❌ (צפוי: 404)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "file_path": "C:/does/not/exist/fake.wav"
+}
+
+###
+
+### 0.5  Flask — בקשה ריקה ❌ (צפוי: 400)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 1 │ AUTHENTICATION
+###  IntelliJ שומר את הטוקנים אוטומטית מהתגובה
+### ════════════════════════════════════════════════════════════
+
+### 1.1  Login Admin ✅
+###       IntelliJ שומר: adminToken, adminRefreshToken
+# @name loginAdmin
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{adminUser}}",
+  "password": "{{adminPass}}"
+}
+
+> {%
+  client.global.set("adminToken",        response.body.accessToken);
+  client.global.set("adminRefreshToken", response.body.refreshToken);
+%}
+
+###
+
+### 1.2  Login User רגיל ✅
+###       IntelliJ שומר: userToken, userRefreshToken
+# @name loginUser
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{regularUser}}",
+  "password": "{{regularPass}}"
+}
+
+> {%
+  client.global.set("userToken",        response.body.accessToken);
+  client.global.set("userRefreshToken", response.body.refreshToken);
+%}
+
+###
+
+### 1.3  Login — סיסמה שגויה ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{adminUser}}",
+  "password": "wrong_password_123"
+}
+
+###
+
+### 1.4  Login — משתמש לא קיים ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "ghost_user_xyz",
+  "password": "doesntmatter"
+}
+
+###
+
+### 1.5  Login — שדות ריקים ❌ (צפוי: 400)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+###
+
+### 1.6  Refresh Token ✅ (צפוי: 200 + tokens חדשים)
+###       משתמש בטוקן שנשמר אוטומטית מ-1.2
+POST {{backendUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{userRefreshToken}}"
+}
+
+###
+
+### 1.7  Refresh Token מזויף ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "this.is.a.completely.fake.token"
+}
+
+###
+
+### 1.8  הרשמה — משתמש חדש ✅ (צפוי: 201)
+POST {{backendUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "test_new_user_001",
+  "email":    "test001@voice.ai",
+  "password": "TestPass123!"
+}
+
+###
+
+### 1.9  הרשמה — username כפול ❌ (צפוי: 400 / 409)
+POST {{backendUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "test_new_user_001",
+  "email":    "test002@voice.ai",
+  "password": "TestPass123!"
+}
+
+###
+
+### 1.10  Logout ✅ (צפוי: 204)
+POST {{backendUrl}}/api/auth/logout
+Authorization: Bearer {{userToken}}
+
+###
+
+### 1.11  שימוש בטוקן אחרי Logout ❌ (צפוי: 401 — Blacklisted)
+###        הרץ מיד אחרי 1.10 — אותו token
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### 1.12  כניסה מחדש אחרי Logout ✅
+###        מחדש את userToken לשאר הבדיקות
+# @name reLoginUser
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{regularUser}}",
+  "password": "{{regularPass}}"
+}
+
+> {%
+  client.global.set("userToken", response.body.accessToken);
+%}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 2 │ USER MANAGEMENT (Admin Only)
+### ════════════════════════════════════════════════════════════
+
+### 2.1  GET כל המשתמשים — Admin ✅ (צפוי: 200 + List)
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.2  GET כל המשתמשים — User רגיל ✅ (צפוי: 200 — GET מותר)
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+###
+
+### 2.3  GET ללא token ❌ (צפוי: 401)
+GET {{backendUrl}}/api/users
+
+###
+
+### 2.4  POST יצירת משתמש — Admin ✅ (צפוי: 201)
+###       IntelliJ שומר את ה-ID החדש
+# @name createUser
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "created_by_admin_001",
+  "email":    "admin_created@voice.ai",
+  "roles":    []
+}
+
+> {%
+  client.global.set("createdUserId", response.body.id);
+%}
+
+###
+
+### 2.5  POST יצירת משתמש — User רגיל ❌ (צפוי: 403)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "should_fail",
+  "email":    "fail@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.6  POST email לא תקין ❌ (צפוי: 400)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "valid_name",
+  "email":    "not-a-valid-email",
+  "roles":    []
+}
+
+###
+
+### 2.7  PUT עדכון משתמש — Admin ✅ (צפוי: 200)
+PUT {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "created_by_admin_001",
+  "email":    "updated_email@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.8  PUT עדכון — User רגיל ❌ (צפוי: 403)
+PUT {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "hack_attempt",
+  "email":    "hack@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.9  DELETE משתמש — Admin ✅ (צפוי: 204)
+DELETE {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.10  DELETE שוב — אותו ID ❌ (צפוי: 404)
+DELETE {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.11  DELETE — User רגיל ❌ (צפוי: 403)
+DELETE {{backendUrl}}/api/users/1
+Authorization: Bearer {{userToken}}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 3 │ VOICE ANALYSIS — HAPPY PATH
+###  Java → Flask → DB
+### ════════════════════════════════════════════════════════════
+
+### 3.1  Upload WAV — User ✅
+###       IntelliJ שומר את analysisId
+# @name uploadAudio
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_audio.wav"
+Content-Type: audio/wav
+
+< {{testAudioFile}}
+--VoiceBoundary--
+
+> {%
+  client.global.set("analysisId", response.body.analysisId);
+%}
+
+###
+
+### 3.2  Upload — Admin ✅ (צפוי: 200)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="admin_test.wav"
+Content-Type: audio/wav
+
+< {{testAudioFile}}
+--VoiceBoundary--
+
+###
+
+### 3.3  Upload MP3 — User ✅
+###       שנה filename ל-.mp3 אם הקובץ שלך הוא MP3
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_audio.mp3"
+Content-Type: audio/mpeg
+
+< {{testAudioFile}}
+--VoiceBoundary--
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 4 │ VOICE ANALYSIS — NEGATIVE TESTS
+### ════════════════════════════════════════════════════════════
+
+### 4.1  Upload ללא token ❌ (צפוי: 401)
+POST {{backendUrl}}/api/analysis/upload
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test.wav"
+Content-Type: audio/wav
+
+< {{testAudioFile}}
+--VoiceBoundary--
+
+###
+
+### 4.2  Upload PDF ❌ (צפוי: 400 — סוג קובץ לא חוקי)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="not_audio.pdf"
+Content-Type: application/pdf
+
+< {{testAudioFile}}
+--VoiceBoundary--
+
+###
+
+### 4.3  Upload קובץ ריק ❌ (צפוי: 400)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="empty.wav"
+Content-Type: audio/wav
+
+--VoiceBoundary--
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 5 │ ANALYSIS HISTORY
+### ════════════════════════════════════════════════════════════
+
+### 5.1  היסטוריה שלי — User ✅ (צפוי: 200 + List)
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### 5.2  היסטוריה שלי — Admin ✅
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.3  היסטוריה ללא token ❌ (צפוי: 401)
+GET {{backendUrl}}/api/analysis/history
+
+###
+
+### 5.4  Admin: היסטוריה של משתמש ספציפי ✅
+###       מחזיר את כל הניתוחים של ה-regularUser
+GET {{backendUrl}}/api/analysis/history/{{regularUser}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.5  User: ניסיון לראות היסטוריה של משתמש אחר ❌ (צפוי: 403)
+GET {{backendUrl}}/api/analysis/history/{{adminUser}}
+Authorization: Bearer {{userToken}}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 6 │ STATS (Public)
+### ════════════════════════════════════════════════════════════
+
+### 6.1  סטטיסטיקות — ללא token ✅ (endpoint פומבי)
+###       צפוי: { totalAnalyses, fakeCount, realCount, avgConfidence, avgProcessingTimeMs }
+GET {{backendUrl}}/api/stats
+
+###
+
+### 6.2  סטטיסטיקות — עם token ✅ (גם עם token עובד)
+GET {{backendUrl}}/api/stats
+Authorization: Bearer {{userToken}}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 7 │ SECURITY TESTS
+### ════════════════════════════════════════════════════════════
+
+### 7.1  token מזויף לחלוטין ❌ (צפוי: 401)
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.fake.signature
+
+###
+
+### 7.2  IDOR — User מנסה לגשת לניתוחים של Admin ❌ (צפוי: 403)
+GET {{backendUrl}}/api/analysis/history/{{adminUser}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### 7.3  User מנסה לרשום עצמו כ-Admin ❌ (צפוי: 201 אבל role = USER)
+###       הרשמה תעבוד אבל הרשאה תהיה ROLE_USER בלבד
+POST {{backendUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "wannabe_admin_001",
+  "email":    "wannabe@voice.ai",
+  "password": "HackAttempt123!"
+}
+
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 8 │ FULL SYSTEM FLOW
+###  מדמה את מה שReact עושה מקצה לקצה
+### ════════════════════════════════════════════════════════════
+
+### F1  הרשמה ✅
+POST {{backendUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "flow_test_user",
+  "email":    "flowtest@voice.ai",
+  "password": "FlowTest123!"
+}
+
+###
+
+### F2  כניסה ✅
+# @name flowLogin
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "flow_test_user",
+  "password": "FlowTest123!"
+}
+
+> {%
+  client.global.set("flowToken", response.body.accessToken);
+%}
+
+###
+
+### F3  ניתוח קובץ ✅
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{flowToken}}
+Content-Type: multipart/form-data; boundary=FlowBoundary
+
+--FlowBoundary
+Content-Disposition: form-data; name="file"; filename="flow_test.wav"
+Content-Type: audio/wav
+
+< {{testAudioFile}}
+--FlowBoundary--
+
+###
+
+### F4  צפייה בהיסטוריה ✅ (צפוי: רשימה עם הניתוח שהרגע נעשה)
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{flowToken}}
+
+###
+
+### F5  Logout ✅ (צפוי: 204)
+POST {{backendUrl}}/api/auth/logout
+Authorization: Bearer {{flowToken}}
+
+###
+
+### F6  ניסיון שימוש אחרי Logout ❌ (צפוי: 401)
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{flowToken}}

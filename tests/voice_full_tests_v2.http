@@ -1,0 +1,405 @@
+### ============================================================
+###  VOICE Backend — Full Test Suite v2
+###  כולל: Flask | Auth | Users | Analysis | System Flows
+###
+###  סדר הרצה:
+###    1. הפעל Flask: python ml/app.py  (פורט 5001)
+###    2. הפעל Spring Boot              (פורט 8080)
+###    3. הרץ Section 0 (health checks)
+###    4. הרץ Section 1 (login) → העתק tokens
+###    5. הרץ את שאר הבדיקות לפי סדר
+### ============================================================
+
+@backendUrl  = http://localhost:8080
+@flaskUrl    = http://localhost:5001
+
+@adminToken  = PASTE_ADMIN_TOKEN_HERE
+@userToken   = PASTE_USER_TOKEN_HERE
+@refreshToken = PASTE_REFRESH_TOKEN_HERE
+@createdUserId = PASTE_CREATED_USER_ID_HERE
+@analysisId    = PASTE_ANALYSIS_ID_HERE
+@testWav       = PASTE_FULL_PATH_TO_WAV_HERE
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 0 │ FLASK SERVICE
+### ════════════════════════════════════════════════════════════
+
+### 0.1  Flask health ✅ (צפוי: 200 + ready: true)
+GET {{flaskUrl}}/health
+
+###
+
+### 0.2  ניתוח ישיר ל-Flask ✅ (ללא Java — בודק את ה-ML בלבד)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "file_path": "{{testWav}}"
+}
+
+###
+
+### 0.3  Flask — קובץ לא קיים ❌ (צפוי: 404)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "file_path": "C:/does/not/exist/fake.wav"
+}
+
+###
+
+### 0.4  Flask — גוף ריק ❌ (צפוי: 400)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{}
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 1 │ AUTHENTICATION
+### ════════════════════════════════════════════════════════════
+
+### 1.1  Login Admin ✅
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+
+### 1.2  Login User ✅
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### 1.3  Login — סיסמה שגויה ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+###
+
+### 1.4  Login — משתמש לא קיים ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "ghost_user",
+  "password": "doesntmatter"
+}
+
+###
+
+### 1.5  Login — שדות ריקים ❌ (צפוי: 400)
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+###
+
+### 1.6  Refresh Token תקין ✅ (צפוי: 200 + tokens חדשים)
+POST {{backendUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### 1.7  Refresh Token מזויף ❌ (צפוי: 401)
+POST {{backendUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "this.is.a.fake.token"
+}
+
+###
+
+### 1.8  Refresh Token ריק ❌ (צפוי: 400)
+POST {{backendUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": ""
+}
+
+###
+
+### 1.9  Logout ✅ (צפוי: 204)
+POST {{backendUrl}}/api/auth/logout
+Authorization: Bearer {{userToken}}
+
+###
+
+### 1.10  שימוש בtoken אחרי Logout ❌ (צפוי: 401)
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 2 │ USER MANAGEMENT
+### ════════════════════════════════════════════════════════════
+
+### 2.1  GET כל המשתמשים — Admin ✅
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.2  GET כל המשתמשים — User ✅ (USER מורשה ל-GET)
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+###
+
+### 2.3  GET משתמש ID=1 ✅
+GET {{backendUrl}}/api/users/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.4  GET משתמש לא קיים ❌ (צפוי: 404)
+GET {{backendUrl}}/api/users/9999
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.5  GET ללא token ❌ (צפוי: 401)
+GET {{backendUrl}}/api/users
+
+###
+
+### 2.6  GET עם token מזויף ❌ (צפוי: 401)
+GET {{backendUrl}}/api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.fake.signature
+
+###
+
+### 2.7  POST יצירת משתמש — Admin ✅ (שמור ID → @createdUserId)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "testuser_new",
+  "email":    "testuser@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.8  POST יצירת משתמש — User ❌ (צפוי: 403)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "should_fail",
+  "email":    "fail@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.9  POST email לא תקין ❌ (צפוי: 400)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "validname",
+  "email":    "not-an-email",
+  "roles":    []
+}
+
+###
+
+### 2.10  PUT עדכון — Admin ✅
+PUT {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "testuser_updated",
+  "email":    "updated@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.11  PUT עדכון — User ❌ (צפוי: 403)
+PUT {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "hack_attempt",
+  "email":    "hack@voice.ai",
+  "roles":    []
+}
+
+###
+
+### 2.12  DELETE — Admin ✅ (צפוי: 204)
+DELETE {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.13  DELETE שוב — אותו ID ❌ (צפוי: 404)
+DELETE {{backendUrl}}/api/users/{{createdUserId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.14  DELETE — User ❌ (צפוי: 403)
+DELETE {{backendUrl}}/api/users/1
+Authorization: Bearer {{userToken}}
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 3 │ ANALYSIS — HAPPY PATH (Java → Flask → DB)
+### ════════════════════════════════════════════════════════════
+
+### 3.1  Upload WAV ✅ (שמור analysisId)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_real.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+###
+
+### 3.2  Upload MP3 ✅
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_fake.mp3"
+Content-Type: audio/mpeg
+
+< ./test_files/test_fake.mp3
+--VoiceBoundary--
+
+###
+
+### 3.3  Upload — Admin ✅
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="admin_test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 4 │ ANALYSIS — NEGATIVE TESTS
+### ════════════════════════════════════════════════════════════
+
+### 4.1  Upload ללא token ❌ (צפוי: 401)
+POST {{backendUrl}}/api/analysis/upload
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+###
+
+### 4.2  Upload PDF ❌ (צפוי: 400 — סוג קובץ לא חוקי)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="not_audio.pdf"
+Content-Type: application/pdf
+
+< ./test_files/dummy.pdf
+--VoiceBoundary--
+
+###
+
+### 4.3  Upload קובץ ריק ❌ (צפוי: 400)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="empty.wav"
+Content-Type: audio/wav
+
+--VoiceBoundary--
+
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 5 │ ANALYSIS HISTORY
+### ════════════════════════════════════════════════════════════
+
+### 5.1  היסטוריה — User ✅
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### 5.2  היסטוריה — Admin ✅
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.3  היסטוריה ללא token ❌ (צפוי: 401)
+GET {{backendUrl}}/api/analysis/history
+
+###
+
+### 5.4  ניתוח ספציפי ✅
+GET {{backendUrl}}/api/analysis/{{analysisId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### 5.5  IDOR — גישה לניתוח של משתמש אחר ❌ (צפוי: 404)
+###       ⚠ שנה ל-ID של ניתוח של admin
+GET {{backendUrl}}/api/analysis/1
+Authorization: Bearer {{userToken}}

@@ -1,0 +1,70 @@
+### ============================================================
+###  VOICE — Flask ML Service Tests
+###  Base: http://localhost:5001
+###  Run Flask first: python ml/app.py
+### ============================================================
+
+@flaskUrl = http://localhost:5001
+@testWav  = "C:\\Users\\yarde\\dataset\\REAL_COMBINED\\cv_0004ce34_common_voice_en_19612777.mp3"
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 1 │ HEALTH
+### ════════════════════════════════════════════════════════════
+
+### 1.1  Health check ✅ (צפוי: 200 + { "status": "ok", "ready": true, "auc_roc": float })
+GET {{flaskUrl}}/health
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  SECTION 2 │ ANALYZE — HAPPY PATH
+### ════════════════════════════════════════════════════════════
+
+### 2.1  ניתוח קובץ WAV תקין ✅
+###      צפוי: 200 + { final_prediction, model_scores, features_vector, ensemble_score, threshold, processing_time_ms }
+POST http://localhost:5001/analyze
+Content-Type: application/json
+
+{
+  "file_path": "C:\\Users\\yarde\\dataset\\REAL_COMBINED\\cv_0004ce34_common_voice_en_19612777.mp3"
+}
+###
+
+### ════════════════════════════════════════════════════════════
+###  SECTION 3 │ ANALYZE — NEGATIVE TESTS
+### ════════════════════════════════════════════════════════════
+
+### 3.1  גוף ריק ❌ (צפוי: 400 — Missing file_path)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{}
+
+###
+
+### 3.2  file_path חסר לחלוטין ❌ (צפוי: 400)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "wrong_field": "some_value"
+}
+
+###
+
+### 3.3  קובץ לא קיים ❌ (צפוי: 404 — File not found)
+POST {{flaskUrl}}/analyze
+Content-Type: application/json
+
+{
+  "file_path": "C:/does/not/exist/fake.wav"
+}
+
+###
+
+### 3.4  Content-Type שגוי ❌ (צפוי: 400)
+POST {{flaskUrl}}/analyze
+Content-Type: text/plain
+
+not json at all

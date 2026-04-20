@@ -1,0 +1,132 @@
+/* Navbar.module.css */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  height: 60px;
+  background: rgba(15, 15, 26, 0.9);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.brandIcon {
+  font-size: 1.3rem;
+}
+
+.brandText {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brandSub {
+  font-size: 0.65rem;
+  color: #475569;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .brandSub { display: inline; }
+}
+
+.links {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.link {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.link:hover {
+  color: #e2e8f0;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.active {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.username {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: none;
+}
+
+@media (min-width: 500px) {
+  .username { display: inline; }
+}
+
+.badge {
+  background: rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 4px;
+  color: #a78bfa;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.4rem;
+}
+
+.logoutBtn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  transition: background 0.15s;
+}
+
+.logoutBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.signInBtn {
+  color: #94a3b8; font-size: 0.8rem; font-weight: 500;
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.12); text-decoration: none;
+  transition: background .15s;
+}
+.signInBtn:hover { background: rgba(255,255,255,.07); color: #e2e8f0; }
+.registerBtn {
+  background: linear-gradient(135deg,#7c3aed,#0891b2);
+  border: none; border-radius: 6px; color: #fff;
+  font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.75rem;
+  text-decoration: none; white-space: nowrap;
+}

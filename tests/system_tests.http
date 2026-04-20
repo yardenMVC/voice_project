@@ -1,0 +1,210 @@
+### ============================================================
+###  VOICE — Full System Tests (Frontend → Backend → Flask)
+###  מדמה את מה שה-React עושה מקצה לקצה
+###
+###  דרישות לפני הרצה:
+###    ✅ Flask רץ על פורט 5001
+###    ✅ Spring Boot רץ על פורט 8080
+###    ✅ React רץ על פורט 5173 (או לפחות CORS מוגדר)
+###    ✅ test_files/ קיים עם test_real.wav
+### ============================================================
+
+@backendUrl = http://localhost:8080
+@adminToken = PASTE_ADMIN_TOKEN_HERE
+@userToken  = PASTE_USER_TOKEN_HERE
+@analysisId = PASTE_ANALYSIS_ID_HERE
+
+###
+### ════════════════════════════════════════════════════════════
+###  FLOW 1 │ Registration + First Analysis
+###  משתמש חדש נרשם → מנתח → רואה היסטוריה
+### ════════════════════════════════════════════════════════════
+
+### F1.1  הרשמה ✅
+POST {{backendUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email":    "systest@voice.ai",
+  "password": "Test1234!"
+}
+
+###
+
+### F1.2  כניסה ✅ — שמור accessToken + refreshToken
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "system_test_user",
+  "password": "Test1234!"
+}
+
+###
+
+### F1.3  ניתוח קובץ קול ✅ — שמור analysisId
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=B
+
+--B
+Content-Disposition: form-data; name="file"; filename="test_real.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--B--
+
+###
+
+### F1.4  היסטוריה — מכילה את הניתוח שהרגע נעשה ✅
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### F1.5  שליפת ניתוח ספציפי לפי ID ✅
+GET {{backendUrl}}/api/analysis/{{analysisId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  FLOW 2 │ Token Lifecycle
+###  כניסה → רענון → שימוש → יציאה → שימוש חוזר נכשל
+### ════════════════════════════════════════════════════════════
+
+### F2.1  כניסה ✅
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### F2.2  היסטוריה עם token תקין ✅
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### F2.3  Logout ✅ (צפוי: 204)
+POST {{backendUrl}}/api/auth/logout
+Authorization: Bearer {{userToken}}
+
+###
+
+### F2.4  שימוש בtoken אחרי logout ❌ (צפוי: 401 — Blacklisted)
+GET {{backendUrl}}/api/analysis/history
+Authorization: Bearer {{userToken}}
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  FLOW 3 │ Admin Actions
+###  admin מנהל משתמשים ורואה לוגים
+### ════════════════════════════════════════════════════════════
+
+### F3.1  Admin login ✅
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+
+### F3.2  רשימת כל המשתמשים ✅
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### F3.3  USER מנסה לראות רשימת משתמשים ✅ (צפוי: 200 — USER מורשה ל-GET)
+GET {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+###
+
+### F3.4  USER מנסה ליצור משתמש ❌ (צפוי: 403)
+POST {{backendUrl}}/api/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "username": "hack_attempt",
+  "email":    "hack@voice.ai",
+  "roles":    []
+}
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  FLOW 4 │ IDOR Protection
+###  משתמש מנסה לגשת לניתוח של משתמש אחר
+### ════════════════════════════════════════════════════════════
+
+### F4.1  כניסה כ-user רגיל ✅
+POST {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### F4.2  ניסיון גישה לניתוח של משתמש אחר ❌ (צפוי: 404 — לא 403)
+###       ⚠ שנה את המספר ל-ID של ניתוח שבוצע על ידי admin
+GET {{backendUrl}}/api/analysis/1
+Authorization: Bearer {{userToken}}
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  FLOW 5 │ Validation Edge Cases
+### ════════════════════════════════════════════════════════════
+
+### F5.1  קובץ PDF מוסווה כ-WAV ❌ (צפוי: 400)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=B
+
+--B
+Content-Disposition: form-data; name="file"; filename="not_audio.pdf"
+Content-Type: application/pdf
+
+< ./test_files/dummy.pdf
+--B--
+
+###
+
+### F5.2  קובץ ריק ❌ (צפוי: 400)
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=B
+
+--B
+Content-Disposition: form-data; name="file"; filename="empty.wav"
+Content-Type: audio/wav
+
+--B--
+
+###
+
+### F5.3  ללא token כלל ❌ (צפוי: 401)
+POST {{backendUrl}}/api/analysis/upload
+Content-Type: multipart/form-data; boundary=B
+
+--B
+Content-Disposition: form-data; name="file"; filename="test.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--B--

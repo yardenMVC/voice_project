@@ -1,0 +1,172 @@
+/* HomePage.module.css */
+
+.page {
+  background: linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 60%,#16213e 100%);
+  min-height: calc(100vh - 60px);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem 3rem;
+  text-align: center;
+  position: relative;
+}
+.heroInner { position: relative; z-index: 1; }
+
+.heroBadge {
+  display: inline-block;
+  background: rgba(139,92,246,.15);
+  border: 1px solid rgba(139,92,246,.35);
+  border-radius: 20px;
+  color: #a78bfa;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  margin-bottom: 1.25rem;
+  padding: .35rem 1rem;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  color: #e2e8f0;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 1.25rem;
+}
+.heroAccent {
+  background: linear-gradient(90deg,#8b5cf6,#06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroSub {
+  color: #94a3b8;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0 auto 2rem;
+  max-width: 560px;
+}
+
+.heroCta {
+  display: flex;
+  gap: .875rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg,#7c3aed,#0891b2);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 700;
+  padding: .8rem 1.75rem;
+  text-decoration: none;
+  transition: opacity .2s, transform .1s;
+  display: inline-block;
+}
+.btnPrimary:hover { opacity: .88; transform: translateY(-1px); }
+
+.btnSecondary {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: .95rem;
+  font-weight: 600;
+  padding: .8rem 1.75rem;
+  text-decoration: none;
+  transition: background .2s;
+  display: inline-block;
+}
+.btnSecondary:hover { background: rgba(255,255,255,.1); }
+
+/* waveform decoration */
+.waveWrap {
+  margin: 2.5rem auto 0;
+  max-width: 600px;
+  opacity: .35;
+}
+.wave { width: 100%; display: block; }
+
+/* ── Stats row ────────────────────────────────────────────────────────────── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+  gap: 1px;
+  background: rgba(255,255,255,.06);
+  border-top: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.statBox {
+  background: rgba(15,15,26,.8);
+  padding: 1.75rem 1rem;
+  text-align: center;
+}
+.statValue {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(90deg,#8b5cf6,#06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: .4rem;
+}
+.statLabel { color: #64748b; font-size: .8rem; }
+
+/* ── Feature grid ─────────────────────────────────────────────────────────── */
+.featSection {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+.sectionTitle {
+  color: #e2e8f0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 .75rem;
+}
+.sectionSub {
+  color: #64748b;
+  font-size: .9rem;
+  margin: 0 auto 2.5rem;
+  max-width: 480px;
+}
+
+.featGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+  gap: 1rem;
+}
+.featCard {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+  transition: border-color .2s, background .2s;
+}
+.featCard:hover {
+  border-color: rgba(139,92,246,.3);
+  background: rgba(139,92,246,.05);
+}
+.featIcon { font-size: 1.6rem; display: block; margin-bottom: .75rem; }
+.featTitle { color: #e2e8f0; font-size: 1rem; font-weight: 600; margin-bottom: .5rem; }
+.featDesc  { color: #64748b; font-size: .85rem; line-height: 1.6; }
+
+/* ── CTA strip ────────────────────────────────────────────────────────────── */
+.ctaStrip {
+  background: rgba(139,92,246,.07);
+  border-top: 1px solid rgba(139,92,246,.15);
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+.ctaTitle { color: #e2e8f0; font-size: 1.5rem; font-weight: 700; margin: 0 0 .5rem; }
+.ctaSub   { color: #64748b; font-size: .9rem; margin: 0 0 1.5rem; }

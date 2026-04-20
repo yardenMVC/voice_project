@@ -1,0 +1,86 @@
+### ============================================================
+###  VOICE — Flask ↔ Backend Integration Tests
+###  בודק שה-Java מצליח לתקשר עם ה-Flask בצורה תקינה
+###
+###  סדר הרצה:
+###    1. הפעל Flask: python ml/app.py
+###    2. הפעל Spring Boot: mvn spring-boot:run
+###    3. הרץ 1.1 (login) → העתק token
+###    4. הרץ את שאר הבדיקות
+### ============================================================
+
+@backendUrl = http://localhost:8080
+@flaskUrl   = http://localhost:5001
+@userToken  = PASTE_USER_TOKEN_HERE
+
+###
+### ════════════════════════════════════════════════════════════
+###  SECTION 1 │ PRE-FLIGHT CHECKS
+### ════════════════════════════════════════════════════════════
+
+### 1.1  Backend עולה ✅
+GET {{backendUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+###
+
+### 1.2  Flask עולה ✅
+GET {{flaskUrl}}/health
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  SECTION 2 │ UPLOAD — Java קורא ל-Flask
+### ════════════════════════════════════════════════════════════
+
+### 2.1  Upload קובץ WAV — Backend מעביר ל-Flask ומחזיר תוצאה ✅
+###      זה בודק את כל השרשרת: Java קולט → שומר temp → שולח ל-Flask → מפרסר → שומר DB
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_real.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
+
+###
+
+### 2.2  Upload MP3 ✅
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_fake.mp3"
+Content-Type: audio/mpeg
+
+< ./test_files/test_fake.mp3
+--VoiceBoundary--
+
+###
+
+### ════════════════════════════════════════════════════════════
+###  SECTION 3 │ FLASK DOWN — Backend מגיב נכון
+### ════════════════════════════════════════════════════════════
+###  ⚠ עצור את Flask לפני שמריץ בדיקה זו, ואז הפעל מחדש
+
+### 3.1  Upload כשFlask לא זמין ❌ (צפוי: 500 + הודעה ידידותית)
+###       ⚠ הפסק Flask לפני הרצה
+POST {{backendUrl}}/api/analysis/upload
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=VoiceBoundary
+
+--VoiceBoundary
+Content-Disposition: form-data; name="file"; filename="test_real.wav"
+Content-Type: audio/wav
+
+< ./test_files/test_real.wav
+--VoiceBoundary--
