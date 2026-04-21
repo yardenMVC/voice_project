@@ -5,6 +5,8 @@
 
 import { useEffect, useState } from "react";
 import styles from "./StatsPage.module.css";
+import ErrorBanner from "../components/ErrorBanner";
+import LoadingState from "../components/LoadingState";
 
 const MOCK = import.meta.env.VITE_MOCK === "true";
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -64,8 +66,8 @@ export default function StatsPage() {
           <h1 className={styles.pageTitle}>System Statistics</h1>
           <p className={styles.lead}>Aggregate data across all analyses. Updated in real time.</p>
 
-          {error   && <div className={styles.error}>⚠️ {error}</div>}
-          {loading && <div className={styles.loading}>Loading statistics…</div>}
+          <ErrorBanner message={error} />
+          {loading && <LoadingState message="Loading statistics…" />}
 
           {!loading && stats && (
               <>

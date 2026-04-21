@@ -12,6 +12,8 @@ import * as usersApi from "../api/usersApi";
 import * as analysisApi from "../api/analysisApi";
 import ResultCard from "../components/ResultCard";
 import styles from "./AdminPage.module.css";
+import ErrorBanner from "../components/ErrorBanner";
+import LoadingState from "../components/LoadingState";
 
 const INITIAL_FORM = { username: "", email: "", password: "", role: "ROLE_USER" };
 
@@ -144,8 +146,7 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {error && <div className={styles.errorBanner}>⚠️ {error}</div>}
-
+          <ErrorBanner message={error} />
           {/* ── Create user form ──────────────────────────────────────────── */}
           {showForm && (
               <form className={styles.createForm} onSubmit={handleCreate}>
@@ -178,7 +179,7 @@ export default function AdminPage() {
 
           {/* ── Users table ───────────────────────────────────────────────── */}
           {loading ? (
-              <div className={styles.loading}>Loading users…</div>
+              <LoadingState message="Loading users…" />
           ) : (
               <div className={styles.tableWrap}>
                 <table className={styles.table}>
@@ -217,14 +218,14 @@ export default function AdminPage() {
                             {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                           </td>
                           <td className={styles.actionsCell}>
-                            <button className={styles.editBtn}   onClick={() => openEdit(u)}    title="Edit user">✏️</button>
-                            <button className={styles.historyBtn} onClick={() => openHistory(u)} title="View analyses">📋</button>
+                            <button className={styles.editBtn}   onClick={() => openEdit(u)}    title="Edit user">Edit</button>
+                            <button className={styles.historyBtn} onClick={() => openHistory(u)} title="View analyses">History</button>
                             <button className={styles.deleteBtn}
                                     onClick={() => handleDelete(u.id)}
                                     disabled={isMe || deleting}
                                     title={isMe ? "Cannot delete yourself" : "Delete user"}
                             >
-                              {deleting ? "…" : "🗑️"}
+                              {deleting ? "…" : "Delete"}
                             </button>
                           </td>
                         </tr>

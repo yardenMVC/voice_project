@@ -113,6 +113,8 @@
 
 .input:focus { border-color: #8b5cf6; }
 
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
 .submitBtn {
   background: linear-gradient(135deg, #7c3aed, #0891b2);
   border: none;
@@ -127,6 +129,30 @@
 
 .submitBtn:hover:not(:disabled) { opacity: 0.85; }
 .submitBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.65rem 1.5rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  justify-content: flex-end;
+}
 
 /* ── Table ───────────────────────────────────────────────────────────────── */
 .loading {
@@ -179,6 +205,7 @@
 .emailCell    { color: #64748b; font-size: 0.82rem; }
 .countCell    { color: #06b6d4; font-family: monospace; }
 .dateCell     { color: #64748b; font-size: 0.82rem; white-space: nowrap; }
+.actionsCell  { white-space: nowrap; }
 
 .youBadge {
   background: rgba(139, 92, 246, 0.2);
@@ -211,17 +238,106 @@
   color: #67e8f9;
 }
 
+/* ── Action buttons in table ─────────────────────────────────────────────── */
+
+.editBtn {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+  color: #a78bfa;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  transition: background 0.15s;
+  margin-right: 0.3rem;
+}
+
+.editBtn:hover { background: rgba(139, 92, 246, 0.2); }
+
+.historyBtn {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 6px;
+  color: #67e8f9;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  transition: background 0.15s;
+  margin-right: 0.3rem;
+}
+
+.historyBtn:hover { background: rgba(6, 182, 212, 0.18); }
+
 .deleteBtn {
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 6px;
   color: #f87171;
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 500;
-  padding: 0.3rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
   transition: background 0.15s;
 }
 
 .deleteBtn:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
 .deleteBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal {
+  background: #1a1a2e;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 14px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 480px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.modalTitle {
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+}
+
+/* ── History list ────────────────────────────────────────────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.historyRow {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.5rem;
+}
+
+.historyRowHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.real { color: #4ade80; }
+.fake { color: #f87171; }

@@ -24,7 +24,7 @@ import { useAnalysis } from "../hooks/useAnalysis";
 import ResultCard from "../components/ResultCard";
 import styles from "./UploadPage.module.css";
 
-const ACCEPT = ".wav,.mp3,.flac,.ogg,audio/*";
+const ACCEPT = ".wav,.mp3";
 
 export default function UploadPage() {
   const { uploading, result, error, upload, clearError } = useAnalysis();
@@ -131,9 +131,9 @@ export default function UploadPage() {
 
         {uploading && (
           <div className={styles.pipeline}>
-            <PipelineStep icon="🔊" label="Feature Extraction (librosa) — 52 acoustic features computed" sub="MFCC × 13, Delta × 13, Delta² × 13, Jitter, Shimmer, SNR, Energy…" active />
+            <PipelineStep label="Feature Extraction  — 52 acoustic features computed" sub="MFCC × 13, Delta × 13, Delta² × 13, Jitter, Shimmer, SNR, Energy…" active />
             
-            <PipelineStep icon="🤖" label="Model Inference — Autoencoder + GaussianRBM · Soft Voting · Threshold: 0.30" />
+            <PipelineStep  label="Model Inference — Autoencoder + GaussianRBM · Soft Voting · Threshold: 0.30" />
             
           </div>
         )}
