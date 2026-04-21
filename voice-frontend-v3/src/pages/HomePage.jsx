@@ -9,42 +9,35 @@ import styles from "./HomePage.module.css";
 
 const FEATURES = [
   {
-    icon: "🔊",
+
     title: "52 Acoustic Features",
-    desc: "MFCC, Delta, Jitter, Shimmer, SNR and more — extracted by librosa from every uploaded file.",
+    desc: "MFCC, Delta, Jitter, Shimmer, SNR and more — extracted by librosa and Parselmouth from every uploaded file.",
   },
   {
-    icon: "🤖",
+
     title: "Dual-Model Detection",
     desc: "Autoencoder measures reconstruction error. GaussianRBM detects statistical anomalies. Both run in parallel.",
   },
   {
-    icon: "⚖️",
+
     title: "Soft Voting Ensemble",
     desc: "Performance-weighted combination of both models produces a final confidence score against a calibrated threshold.",
   },
   {
-    icon: "📊",
+
     title: "Full Transparency",
-    desc: "Every decision is auditable — see every feature value, model score, and where in the file the anomaly appears.",
+    desc: "Every decision is auditable — see every feature value and model score for every analysis.",
   },
   {
-    icon: "🛡️",
+
     title: "KS Feature Selection",
     desc: "Features are selected per model using the KS statistic — measuring separation power between real and synthetic voice distributions.",
   },
   {
-    icon: "⚡",
-    title: "Real-Time Results",
-    desc: "Upload a file, get a verdict in seconds. Supports WAV, MP3, FLAC, and OGG up to 10 MB.",
-  },
-];
 
-const STATS = [
-  { value: "52",   label: "Acoustic features extracted" },
-  { value: "34",   label: "Active features (KS selected)" },
-  { value: "2",    label: "ML models in ensemble" },
-  { value: "0.30", label: "Calibrated detection threshold" },
+    title: "Real-Time Results",
+    desc: "Upload a file, get a verdict in seconds. Supports WAV and MP3 up to 50 MB.",
+  },
 ];
 
 export default function HomePage() {
@@ -52,7 +45,8 @@ export default function HomePage() {
 
   return (
       <main className={styles.page}>
-        {/* ── Hero ─────────────────────────────────────────────────────────── */}
+
+        {/* ── Hero ──────────────────────────────────────────────────────────── */}
         <section className={styles.hero}>
           <div className={styles.heroInner}>
             <div className={styles.heroBadge}>Voice Authenticity Detection</div>
@@ -97,16 +91,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Quick stats ───────────────────────────────────────────────────── */}
-        <section className={styles.statsRow}>
-          {STATS.map(({ value, label }) => (
-              <div key={label} className={styles.statBox}>
-                <div className={styles.statValue}>{value}</div>
-                <div className={styles.statLabel}>{label}</div>
-              </div>
-          ))}
-        </section>
-
         {/* ── Feature grid ──────────────────────────────────────────────────── */}
         <section className={styles.featSection}>
           <h2 className={styles.sectionTitle}>How VOICE Protects You</h2>
@@ -134,6 +118,7 @@ export default function HomePage() {
               <Link to="/register" className={styles.btnPrimary}>Create Account →</Link>
           )}
         </section>
+
       </main>
   );
 }

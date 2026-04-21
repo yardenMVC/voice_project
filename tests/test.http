@@ -1,0 +1,14 @@
+### Login first
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+
+### Then paste the accessToken from above into the Authorization header below
+GET http://localhost:8080/api/analysis/history
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sInN1YiI6ImFkbWluIiwianRpIjoiOTdjMzcwM2UtYmFmZC00NmM2LWI3MzYtZGViYTM0NzQxMzA3IiwiaWF0IjoxNzc2NzYxNDkyLCJleHAiOjE3NzY3NjMyOTJ9.IIRUERnNLLOdOUrS8AagEQ5dA7PFmYL5H8VgzgneUvg

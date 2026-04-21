@@ -70,7 +70,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/auth/login", "/api/auth/register",
                                 "/api/auth/refresh-token").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stats").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats", "/api/features/**").permitAll()
 
                         // Admin-only user management
                         .requestMatchers(HttpMethod.POST,   "/api/users/**").hasRole("ADMIN")

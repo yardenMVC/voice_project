@@ -12,6 +12,7 @@ public record AnalysisResponse(
         String finalPrediction,
         Double autoencoderScore,
         Double rbmScore,
+        Double  ensembleScore,
         Map<String, Object> featuresVector,
         String originalFilename,
         LocalDateTime analyzedAt,

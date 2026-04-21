@@ -1,5 +1,5 @@
 /**
- * AboutPage.jsx — Project background, datasets, models, engineering rationale.
+ * AboutPage.jsx — Project background, datasets, models.
  */
 
 import styles from "./AboutPage.module.css";
@@ -7,10 +7,21 @@ import styles from "./AboutPage.module.css";
 const DATASETS = [
   {
     name: "Fake or Real (FoR)",
-    type: "Both",
-    size: "~198,000 samples",
+    pill: "Real & Synthetic",
     desc: "A balanced dataset of real and AI-generated speech samples used for both training and evaluation. Contains authentic human recordings alongside synthesized voices from multiple TTS systems.",
     url:  "https://www.kaggle.com/datasets/mohammedabdeldayem/the-fake-or-real-dataset",
+  },
+  {
+    name: "Mozilla Common Voice",
+    pill: "Real voices",
+    desc: "An open-source dataset of real human voice recordings contributed by volunteers worldwide. Used to train and validate the system's understanding of authentic human speech patterns across diverse speakers and accents.",
+    url:  "https://commonvoice.mozilla.org/en/datasets",
+  },
+  {
+    name: "WaveFake",
+    pill: "Synthetic voices",
+    desc: "A dataset of AI-generated audio samples produced by multiple modern TTS systems including MelGAN, HiFi-GAN, and WaveGlow. Used to expose the system to a wide variety of synthesis artifacts and deepfake techniques.",
+    url:  "https://github.com/RUB-SysSec/WaveFake",
   },
 ];
 
@@ -50,17 +61,16 @@ export default function AboutPage() {
             </p>
           </section>
 
-          {/* ── Datasets ─────────────────────────────────────────────────── */}
+          {/* ── Datasets ──────────────────────────────────────────────────── */}
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Training Dataset</h2>
+            <h2 className={styles.sectionTitle}>Training Datasets</h2>
             <div className={styles.datasetGrid}>
-              {DATASETS.map(({ name, type, size, desc, url }) => (
+              {DATASETS.map(({ name, pill, desc, url }) => (
                   <div key={name} className={`${styles.datasetCard} ${styles.realCard}`}>
                     <div className={styles.datasetHeader}>
                   <span className={`${styles.typePill} ${styles.pillReal}`}>
-                    🎙️ Real & Synthetic voices
+                    🎙️ {pill}
                   </span>
-                      <span className={styles.datasetSize}>{size}</span>
                     </div>
                     <h3 className={styles.datasetName}>{name}</h3>
                     <p className={styles.datasetDesc}>{desc}</p>
@@ -72,7 +82,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* ── Models ───────────────────────────────────────────────────── */}
+          {/* ── Models ────────────────────────────────────────────────────── */}
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Detection Models</h2>
             <div className={styles.modelGrid}>
@@ -87,62 +97,12 @@ export default function AboutPage() {
             <div className={styles.votingBox}>
               <h3 className={styles.votingTitle}>Soft Voting Ensemble</h3>
               <p className={styles.votingDesc}>
-                Both models run in parallel. Their scores are combined using performance-weighted
-                Soft Voting — models that performed better during calibration receive a higher weight.
+                Both models run in parallel. Their raw scores are percentile-normalized against
+                a calibration set of real voices, then combined using performance-weighted Soft Voting.
                 The final ensemble score is compared against a calibrated threshold of{" "}
-                <strong>0.30</strong>. The system is tuned for high sensitivity: when in doubt, it
-                flags audio as suspicious.
+                <strong>0.30</strong>. The system is tuned for high sensitivity: when in doubt,
+                it flags audio as suspicious.
               </p>
-            </div>
-          </section>
-
-          {/* ── Feature selection ─────────────────────────────────────────── */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Feature Selection — KS Statistic</h2>
-            <p className={styles.body}>
-              From the 52 extracted acoustic features, each model uses a dedicated subset selected
-              by the Kolmogorov-Smirnov (KS) statistic — a non-parametric test that measures how
-              differently a feature is distributed between real and synthetic voice samples.
-              Features with low KS scores were excluded as they provide weak separation power.
-            </p>
-            <div className={styles.featureSplit}>
-              <div className={styles.splitBox}>
-                <div className={styles.splitNum} style={{ color: "#8b5cf6" }}>30</div>
-                <div className={styles.splitLabel}>AE features</div>
-                <div className={styles.splitSub}>Deltas, Energy RMS, MFCC 1/5/10</div>
-              </div>
-              <div className={styles.splitArrow}>|</div>
-              <div className={styles.splitBox}>
-                <div className={styles.splitNum} style={{ color: "#06b6d4" }}>19</div>
-                <div className={styles.splitLabel}>RBM features</div>
-                <div className={styles.splitSub}>MFCCs, physiological, Deltas</div>
-              </div>
-              <div className={styles.splitArrow}>of</div>
-              <div className={styles.splitBox}>
-                <div className={styles.splitNum} style={{ color: "#a78bfa" }}>52</div>
-                <div className={styles.splitLabel}>Total extracted</div>
-                <div className={styles.splitSub}>All shown in the result card for auditability</div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Tech stack ───────────────────────────────────────────────── */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Technology Stack</h2>
-            <div className={styles.stackGrid}>
-              {[
-                { layer: "Frontend",   tech: "React 18 · Vite · CSS Modules" },
-                { layer: "Backend",    tech: "Java 17 · Spring Boot 3 · JWT" },
-                { layer: "AI Engine",  tech: "Python 3 · librosa · scikit-learn" },
-                { layer: "Database",   tech: "PostgreSQL · JPA / Hibernate" },
-                { layer: "IPC",        tech: "REST API · JSON · Flask" },
-                { layer: "Dataset",    tech: "Fake or Real (FoR) Dataset" },
-              ].map(({ layer, tech }) => (
-                  <div key={layer} className={styles.stackRow}>
-                    <span className={styles.stackLayer}>{layer}</span>
-                    <span className={styles.stackTech}>{tech}</span>
-                  </div>
-              ))}
             </div>
           </section>
 

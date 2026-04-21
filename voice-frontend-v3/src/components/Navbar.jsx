@@ -27,7 +27,8 @@ export default function Navbar() {
         <NavLink to="/about"       className={linkClass}>About</NavLink>
         <NavLink to="/how-it-works" className={linkClass}>How It Works</NavLink>
         <NavLink to="/stats"       className={linkClass}>Stats</NavLink>
-        {user && <NavLink to="/upload"  className={linkClass}>Upload</NavLink>}
+          <NavLink to="/user-guide"  className={linkClass}>User Guide</NavLink>  {/* ← הוסף */}
+          {user && <NavLink to="/upload"  className={linkClass}>Upload</NavLink>}
         {user && <NavLink to="/history" className={linkClass}>History</NavLink>}
         {isAdmin && <NavLink to="/admin" className={linkClass}>Admin</NavLink>}
       </div>

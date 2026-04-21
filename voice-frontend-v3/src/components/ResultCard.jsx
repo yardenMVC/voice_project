@@ -1,13 +1,13 @@
 /**
- * ResultCard.jsx — Full analysis result with visualizations
+ * ResultCard.jsx
  *
- * Changes from previous version:
- * - Removed "Score Over Time" / TimelineChart (windowScores not in backend)
- * - FeatureChart now driven by activeFeatures from backend (not static featureDefs)
- *   showing which model each feature belongs to: AE / RBM / both
- * - Feature selection note updated: "KS statistic" instead of "DBSCAN"
- * - Field names aligned with AnalysisResponse: finalPrediction, autoencoderScore,
- *   rbmScore, processingTimeMs, activeFeatures
+ * Changes:
+ * - AE and RBM scores shown as numbers only (no bar) — different scales
+ * - Ensemble score keeps bar (0-1 scale)
+ * - FeatureChart shows ALL 52 features from featuresVector directly
+ * - Active features (AE/RBM tags) from activeFeatures when available
+ * - Features not in activeFeatures shown without tag
+ * - Expand/Collapse to show all 52
  */
 
 import { useState } from "react";
@@ -17,39 +17,66 @@ const THRESHOLD = 0.30;
 
 function confidenceLevel(score, verdict) {
     const dist = verdict === "FAKE" ? score - THRESHOLD : THRESHOLD - score;
-    if (dist < 0.15) return { label: "Low confidence",    color: "#f59e0b" };
+    if (dist < 0.15) return { label: "Low confidence",  color: "#f59e0b" };
     if (dist < 0.35) return { label: "Medium confidence", color: "#06b6d4" };
     return              { label: "High confidence",    color: "#4ade80" };
 }
 
-function ModelScoreChart({ ae, rbm, ensemble, threshold }) {
-    const models = [
-        { label: "Autoencoder", score: ae,       desc: "Reconstruction Error — Delta features" },
-        { label: "GaussianRBM", score: rbm,      desc: "Free Energy — MFCC + physiological features" },
-        { label: "Ensemble",    score: ensemble, desc: "Soft Voting — weighted combination", bold: true },
-    ];
+// ── Model Scores ───────────────────────────────────────────────────────────
+
+function ModelScoreSection({ ae, rbm, ensemble, threshold }) {
     const thPct = threshold * 100;
+    const ensembleOver = ensemble >= threshold;
+
     return (
         <div className={styles.chartWrap}>
-            {models.map(({ label, score, desc, bold }) => {
-                const pct = Math.min(score * 100, 100);
-                const over = score >= threshold;
-                return (
-                    <div key={label} className={styles.modelRow}>
-                        <div className={styles.modelMeta}>
-                            <span className={`${styles.modelLabel} ${bold ? styles.boldLabel : ""}`}>{label}</span>
-                            <span className={styles.modelDesc}>{desc}</span>
-                        </div>
-                        <div className={styles.barTrack}>
-                            <div className={styles.thresholdLine} style={{ left: `${thPct}%` }} title={`Threshold: ${threshold}`} />
-                            <div className={`${styles.barFill} ${over ? styles.barFake : styles.barReal}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className={`${styles.scoreNum} ${over ? styles.scoreOver : styles.scoreUnder}`}>
-              {score.toFixed(4)}
-            </span>
-                    </div>
-                );
-            })}
+
+            {/* AE — number only */}
+            <div className={styles.modelRow}>
+                <div className={styles.modelMeta}>
+                    <span className={styles.modelLabel}>Autoencoder</span>
+                    <span className={styles.modelDesc}>Reconstruction Error — Delta features</span>
+                </div>
+                <span className={styles.modelDesc} style={{ flex: 1, color: "#475569", fontSize: "0.75rem" }}>
+                    Raw score (not comparable to RBM scale)
+                </span>
+                <span className={styles.scoreNum} style={{ color: "#94a3b8" }}>
+                    {ae.toFixed(6)}
+                </span>
+            </div>
+
+            {/* RBM — number only */}
+            <div className={styles.modelRow}>
+                <div className={styles.modelMeta}>
+                    <span className={styles.modelLabel}>GaussianRBM</span>
+                    <span className={styles.modelDesc}>Free Energy — MFCC + physiological features</span>
+                </div>
+                <span className={styles.modelDesc} style={{ flex: 1, color: "#475569", fontSize: "0.75rem" }}>
+                    Raw score (not comparable to AE scale)
+                </span>
+                <span className={styles.scoreNum} style={{ color: "#94a3b8" }}>
+                    {rbm.toFixed(6)}
+                </span>
+            </div>
+
+            {/* Ensemble — bar (0-1 scale) */}
+            <div className={styles.modelRow}>
+                <div className={styles.modelMeta}>
+                    <span className={`${styles.modelLabel} ${styles.boldLabel}`}>Ensemble</span>
+                    <span className={styles.modelDesc}>Soft Voting — percentile-normalized combination</span>
+                </div>
+                <div className={styles.barTrack}>
+                    <div className={styles.thresholdLine} style={{ left: `${thPct}%` }} title={`Threshold: ${threshold}`} />
+                    <div
+                        className={`${styles.barFill} ${ensembleOver ? styles.barFake : styles.barReal}`}
+                        style={{ width: `${Math.min(ensemble * 100, 100)}%` }}
+                    />
+                </div>
+                <span className={`${styles.scoreNum} ${ensembleOver ? styles.scoreOver : styles.scoreUnder}`}>
+                    {ensemble.toFixed(4)}
+                </span>
+            </div>
+
             <div className={styles.thresholdLegend}>
                 <span className={styles.thresholdDash} /> Threshold: {threshold}
             </div>
@@ -57,82 +84,123 @@ function ModelScoreChart({ ae, rbm, ensemble, threshold }) {
     );
 }
 
-/**
- * FeatureChart — driven by activeFeatures from backend.
- * Each feature shows which model(s) use it: AE / RBM / AE+RBM.
- * "Expand" button reveals the full list.
- */
+// ── Feature Chart ──────────────────────────────────────────────────────────
+
 function FeatureChart({ featuresVector, activeFeatures }) {
     const [expanded, setExpanded] = useState(false);
 
-    if (!activeFeatures || !activeFeatures.features || activeFeatures.features.length === 0) {
+    if (!featuresVector || Object.keys(featuresVector).length === 0) {
         return <p style={{ color: "#475569", fontSize: "0.8rem" }}>Feature data not available.</p>;
     }
 
-    const { totalExtracted, aeCount, rbmCount, selectionMethod, features } = activeFeatures;
-    const displayed = expanded ? features : features.slice(0, 8);
+    // Build a lookup: featureName → { activeIn: ["AE", "RBM"] }
+    const activeMap = {};
+    if (activeFeatures?.features?.length > 0) {
+        for (const f of activeFeatures.features) {
+            activeMap[f.name] = f.activeIn ?? [];
+        }
+    }
+
+    // Build full list from featuresVector keys, sorted by name
+    const allFeatures = Object.entries(featuresVector)
+        .map(([name, val]) => ({
+            name,
+            val,
+            activeIn: activeMap[name] ?? [],
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    const PREVIEW = 10;
+    const displayed = expanded ? allFeatures : allFeatures.slice(0, PREVIEW);
 
     const modelTag = (activeIn) => {
         if (activeIn.includes("AE") && activeIn.includes("RBM")) return { label: "AE + RBM", color: "#8b5cf6" };
         if (activeIn.includes("AE"))  return { label: "AE",  color: "#06b6d4" };
         if (activeIn.includes("RBM")) return { label: "RBM", color: "#f59e0b" };
-        return { label: "—", color: "#475569" };
+        return null; // not active in any model
     };
+
+    const aeCount  = activeFeatures?.aeCount  ?? Object.values(activeMap).filter(a => a.includes("AE")).length;
+    const rbmCount = activeFeatures?.rbmCount ?? Object.values(activeMap).filter(a => a.includes("RBM")).length;
+    const total    = Object.keys(featuresVector).length;
 
     return (
         <div>
+            {/* Header */}
             <div className={styles.featToggle}>
-        <span className={styles.featCount}>
-          <span className={styles.activeCount}>{totalExtracted} extracted</span>
-          <span style={{ color: "#475569", marginLeft: "8px" }}>
-            · {aeCount} in AE · {rbmCount} in RBM · selected by {selectionMethod}
-          </span>
-        </span>
-                <button className={styles.toggleBtn} onClick={() => setExpanded((v) => !v)}>
-                    {expanded ? "Show less" : `Expand all ${features.length} features`}
+                <span className={styles.featCount}>
+                    <span className={styles.activeCount}>{total} extracted</span>
+                    {aeCount > 0 && (
+                        <span style={{ color: "#475569", marginLeft: "8px" }}>
+                            · {aeCount} in AE · {rbmCount} in RBM
+                        </span>
+                    )}
+                </span>
+                <button className={styles.toggleBtn} onClick={() => setExpanded(v => !v)}>
+                    {expanded ? "Show less" : `Expand all ${total} features`}
                 </button>
             </div>
 
+            {/* Feature rows */}
             <div className={styles.featList}>
-                {displayed.map(({ name, index, activeIn }) => {
+                {displayed.map(({ name, val, activeIn }) => {
                     const tag = modelTag(activeIn);
-                    // Try to find a display value from featuresVector
-                    const keyGuess = name.toLowerCase().replace(/_/g, "");
-                    const val = featuresVector
-                        ? (featuresVector[name] ?? featuresVector[keyGuess] ?? null)
-                        : null;
+                    const numVal = typeof val === "number" ? val : Number(val);
 
                     return (
                         <div key={name} className={styles.featRow}>
                             <div className={styles.featLabel}>
-                <span
-                    className={styles.featStatus}
-                    style={{ background: tag.color + "22", color: tag.color, padding: "1px 6px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 600 }}
-                >
-                  {tag.label}
-                </span>
+                                {tag ? (
+                                    <span
+                                        className={styles.featStatus}
+                                        style={{
+                                            background: tag.color + "22",
+                                            color: tag.color,
+                                            padding: "1px 6px",
+                                            borderRadius: "4px",
+                                            fontSize: "0.7rem",
+                                            fontWeight: 600,
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {tag.label}
+                                    </span>
+                                ) : (
+                                    <span style={{
+                                        padding: "1px 6px",
+                                        fontSize: "0.7rem",
+                                        color: "#334155",
+                                        whiteSpace: "nowrap",
+                                    }}>
+                                        —
+                                    </span>
+                                )}
                                 <span className={styles.featName}>{name}</span>
-                                <span style={{ color: "#475569", fontSize: "0.7rem" }}>#{index}</span>
                             </div>
-                            {val !== null && (
-                                <span className={styles.featVal}>{Number(val).toFixed(4)}</span>
-                            )}
+                            <span className={styles.featVal}>
+                                {isNaN(numVal) ? "—" : numVal.toFixed(6)}
+                            </span>
                         </div>
                     );
                 })}
             </div>
 
-            {!expanded && features.length > 8 && (
-                <button className={styles.toggleBtn} style={{ marginTop: "8px" }} onClick={() => setExpanded(true)}>
-                    + {features.length - 8} more features
+            {!expanded && allFeatures.length > PREVIEW && (
+                <button
+                    className={styles.toggleBtn}
+                    style={{ marginTop: "8px" }}
+                    onClick={() => setExpanded(true)}
+                >
+                    + {allFeatures.length - PREVIEW} more features
                 </button>
             )}
         </div>
     );
 }
 
+// ── ResultCard ─────────────────────────────────────────────────────────────
+
 export default function ResultCard({ result }) {
-    // Support both old field names (history items) and new backend field names
     const verdict    = result.finalPrediction ?? result.verdict;
     const isReal     = verdict === "REAL";
     const threshold  = result.threshold ?? THRESHOLD;
@@ -146,19 +214,28 @@ export default function ResultCard({ result }) {
 
     return (
         <div className={`${styles.card} ${isReal ? styles.real : styles.fake}`}>
+
             {/* Verdict */}
             <div className={styles.verdict}>
                 <span className={styles.verdictIcon}>{isReal ? "✅" : "🚨"}</span>
                 <div className={styles.verdictBody}>
-                    <div className={styles.verdictLabel}>{isReal ? "Authentic Voice" : "Spoofed / Synthetic Voice"}</div>
+                    <div className={styles.verdictLabel}>
+                        {isReal ? "Authentic Voice" : "Spoofed / Synthetic Voice"}
+                    </div>
                     <div className={styles.scoreRow}>
-                        <span className={styles.scoreDisplay}>Score: <strong>{ensemble.toFixed(4)}</strong></span>
+                        <span className={styles.scoreDisplay}>
+                            Score: <strong>{ensemble.toFixed(4)}</strong>
+                        </span>
                         <span className={styles.scoreSep}>|</span>
-                        <span className={styles.thresholdDisplay}>Threshold: <strong>{threshold}</strong></span>
+                        <span className={styles.thresholdDisplay}>
+                            Threshold: <strong>{threshold}</strong>
+                        </span>
                         <span className={styles.scoreSep}>|</span>
                         <span className={styles.arrow}>→ <strong>{verdict}</strong></span>
                     </div>
-                    <div className={styles.confLevel} style={{ color: conf.color }}>● {conf.label}</div>
+                    <div className={styles.confLevel} style={{ color: conf.color }}>
+                        ● {conf.label}
+                    </div>
                 </div>
             </div>
 
@@ -169,14 +246,14 @@ export default function ResultCard({ result }) {
             {/* Model Scores */}
             <div className={styles.section}>
                 <div className={styles.sectionTitle}>Model Scores</div>
-                <ModelScoreChart ae={ae} rbm={rbm} ensemble={ensemble} threshold={threshold} />
+                <ModelScoreSection ae={ae} rbm={rbm} ensemble={ensemble} threshold={threshold} />
             </div>
 
-            {/* Active Features */}
+            {/* Feature Analysis */}
             <div className={styles.section}>
                 <div className={styles.sectionTitle}>Feature Analysis</div>
                 <p className={styles.sectionSub}>
-                    Features selected via KS statistic · highest distributional separation between real and fake audio
+                    52 acoustic features extracted · active subset selected via KS statistic
                 </p>
                 <FeatureChart
                     featuresVector={result.featuresVector ?? result.features}
@@ -188,7 +265,7 @@ export default function ResultCard({ result }) {
             <div className={styles.meta}>
                 <span>📁 {filename}</span>
                 {analyzedAt && <span>🕐 {new Date(analyzedAt).toLocaleString()}</span>}
-                {procTime && <span>⚡ {procTime}ms</span>}
+                {procTime   && <span>⚡ {procTime}ms</span>}
             </div>
         </div>
     );

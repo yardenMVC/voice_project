@@ -10,18 +10,23 @@ import java.util.Map;
 /**
  * Internal DTO that maps the JSON output from the Flask ML microservice.
  *
- * Flask response format:
+ * Flask response format (updated):
  * {
- *   "final_prediction": "FAKE",
- *   "model_scores": { "autoencoder": 0.87, "rbm": 0.92 },
- *   "features_vector": { "mfcc": [...], "jitter": 0.003, ... },
- *   "ensemble_score": 0.76,
- *   "threshold": 0.30,
+ *   "final_prediction":  "FAKE",
+ *   "model_scores":      { "autoencoder": 0.87, "rbm": 0.92 },
+ *   "features_vector":   { "mfcc": [...], "jitter": 0.003, ... },
+ *   "ensemble_score":    0.76,
+ *   "threshold":         0.30,
  *   "processing_time_ms": 450,
+ *
+ *   "model_hash":        "d41d8cd98f00b204e9800998ecf8427e",
+ *   "ae_model_path":     "autoencoder_v4.keras",
+ *   "rbm_model_path":    "rbm_v4.pkl",
+ *
  *   "active_features": {
- *     "total_extracted": 52,
- *     "ae_count": 30,
- *     "rbm_count": 19,
+ *     "total_extracted":  52,
+ *     "ae_count":         30,
+ *     "rbm_count":        19,
  *     "selection_method": "KS statistic",
  *     "features": [
  *       { "name": "MFCC_1", "index": 0, "active_in": ["AE", "RBM"] },
@@ -52,8 +57,18 @@ public class PythonAnalysisResult {
     @JsonProperty("processing_time_ms")
     private Integer processingTimeMs;
 
-    @JsonProperty("active_features")
-    private ActiveFeaturesResult activeFeatures;
+    // ── New fields — model identity ────────────────────────────────────────
+    // Flask computes model_hash as MD5 of best_model.json at startup.
+    // Java uses it as the idempotency key for EnsembleConfiguration.
+
+    @JsonProperty("model_hash")
+    private String modelHash;
+
+    @JsonProperty("ae_model_path")
+    private String aeModelPath;
+
+    @JsonProperty("rbm_model_path")
+    private String rbmModelPath;
 
     // ── Nested DTOs ────────────────────────────────────────────────────────
 
@@ -98,4 +113,7 @@ public class PythonAnalysisResult {
         @JsonProperty("active_in")
         private List<String> activeIn;
     }
+
+    @JsonProperty("active_features")
+    private ActiveFeaturesResult activeFeatures;
 }

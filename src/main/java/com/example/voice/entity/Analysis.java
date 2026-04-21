@@ -40,11 +40,20 @@ public class Analysis {
     @Column(columnDefinition = "TEXT")
     private String featuresVectorJson;
 
-    // Active features metadata — stored as JSON string
-    // Contains: total_extracted, ae_count, rbm_count,
-    //           selection_method, features[{name, index, active_in}]
-    @Column(columnDefinition = "TEXT")
-    private String activeFeaturesJson;
+    // ── REMOVED: activeFeaturesJson ───────────────────────────────────────────
+    // Previously stored active features as a redundant JSON blob.
+    // Now resolved via ensembleConfiguration → ensemble_features join.
+    // The frontend receives the same ActiveFeatures structure — AnalysisService
+    // builds it from the DB relations instead of deserializing a JSON string.
+
+    /**
+     * Links this analysis to the exact model configuration that produced it.
+     * Allows audit: "which model version and threshold were used for this result?"
+     * LAZY fetch — only loaded when AnalysisService explicitly needs it.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ensemble_config_id", nullable = true)
+    private EnsembleConfiguration ensembleConfiguration;
 
     // Processing time from Flask (ms) — used for StatsPage average
     @Column
