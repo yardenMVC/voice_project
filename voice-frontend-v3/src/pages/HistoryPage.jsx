@@ -87,14 +87,14 @@ export default function HistoryPage() {
                                                     onClick={(e) => { e.stopPropagation(); toggleExpand(item.analysisId ?? item.id); }}
                                                     title={expandedId === (item.analysisId ?? item.id) ? "Collapse" : "Expand details"}
                                                 >
-                                                    {expandedId === (item.analysisId ?? item.id) ? "▲" : "▼"}
+                                                    {expandedId === (item.analysisId ?? item.id) ? "closa" : "view"}
                                                 </button>
                                                 <button
                                                     className={styles.deleteBtn}
                                                     onClick={(e) => { e.stopPropagation(); deleteEntry(item.analysisId ?? item.id); }}
                                                     title="Delete this analysis"
                                                 >
-                                                    🗑️
+                                                    delete
                                                 </button>
                                             </div>
                                         </div>
