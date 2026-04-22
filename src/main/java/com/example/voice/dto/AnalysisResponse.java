@@ -13,6 +13,7 @@ public record AnalysisResponse(
         Double autoencoderScore,
         Double rbmScore,
         Double  ensembleScore,
+        Double threshold,        // ← הוסף שורה זו
         Map<String, Object> featuresVector,
         String originalFilename,
         LocalDateTime analyzedAt,

@@ -1,16 +1,12 @@
 /**
- * AdminPage.jsx — User management (ROLE_ADMIN only)
- *
- * Changes:
- * - Added Edit user modal (PUT /api/users/{id})
- * - Added "View History" per user (GET /api/analysis/history/{username})
+ * AdminPage.jsx — User management table (ROLE_ADMIN only)
+ * History button navigates to /admin/history/:username
  */
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import * as usersApi from "../api/usersApi";
-import * as analysisApi from "../api/analysisApi";
-import ResultCard from "../components/ResultCard";
 import styles from "./AdminPage.module.css";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadingState from "../components/LoadingState";
@@ -19,24 +15,18 @@ const INITIAL_FORM = { username: "", email: "", password: "", role: "ROLE_USER" 
 
 export default function AdminPage() {
   const { user: me } = useAuth();
-  const [users,      setUsers]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
-  const [form,       setForm]       = useState(INITIAL_FORM);
-  const [creating,   setCreating]   = useState(false);
-  const [showForm,   setShowForm]   = useState(false);
+  const navigate     = useNavigate();
+
+  const [users,       setUsers]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
+  const [form,        setForm]        = useState(INITIAL_FORM);
+  const [creating,    setCreating]    = useState(false);
+  const [showForm,    setShowForm]    = useState(false);
   const [deletingIds, setDeletingIds] = useState(new Set());
-
-  // Edit modal state
-  const [editUser,   setEditUser]   = useState(null); // user being edited
-  const [editForm,   setEditForm]   = useState({});
-  const [saving,     setSaving]     = useState(false);
-
-  // History modal state
-  const [historyUser,    setHistoryUser]    = useState(null);
-  const [historyItems,   setHistoryItems]   = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [expandedId,     setExpandedId]     = useState(null);
+  const [editUser,    setEditUser]    = useState(null);
+  const [editForm,    setEditForm]    = useState({});
+  const [saving,      setSaving]      = useState(false);
 
   // ── Load users ─────────────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
@@ -63,7 +53,7 @@ export default function AdminPage() {
         username: form.username,
         email:    form.email,
         password: form.password,
-        roles: [],
+        roles:    [],
       });
       setUsers((prev) => [...prev, newUser]);
       setForm(INITIAL_FORM);
@@ -113,24 +103,8 @@ export default function AdminPage() {
     }
   };
 
-  // ── View user history ──────────────────────────────────────────────────────
-  const openHistory = async (u) => {
-    setHistoryUser(u);
-    setHistoryItems([]);
-    setHistoryLoading(true);
-    setExpandedId(null);
-    try {
-      const data = await analysisApi.getHistoryByUsername(u.username);
-      setHistoryItems(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  const handleFormChange   = (e) => setForm((prev)     => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleEditChange   = (e) => setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleFormChange = (e) => setForm((prev)     => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleEditChange = (e) => setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   return (
       <main className={styles.page}>
@@ -147,7 +121,8 @@ export default function AdminPage() {
           </div>
 
           <ErrorBanner message={error} />
-          {/* ── Create user form ──────────────────────────────────────────── */}
+
+          {/* ── Create user form ────────────────────────────────────────────── */}
           {showForm && (
               <form className={styles.createForm} onSubmit={handleCreate}>
                 <h3 className={styles.formTitle}>Create New User</h3>
@@ -177,7 +152,7 @@ export default function AdminPage() {
               </form>
           )}
 
-          {/* ── Users table ───────────────────────────────────────────────── */}
+          {/* ── Users table ─────────────────────────────────────────────────── */}
           {loading ? (
               <LoadingState message="Loading users…" />
           ) : (
@@ -208,7 +183,8 @@ export default function AdminPage() {
                           <td className={styles.emailCell}>{u.email}</td>
                           <td>
                             {(u.roles || []).map((r) => (
-                                <span key={r?.roleName ?? r} className={`${styles.roleBadge} ${r?.roleName === "ADMIN" ? styles.adminBadge : styles.userBadge}`}>
+                                <span key={r?.roleName ?? r}
+                                      className={`${styles.roleBadge} ${r?.roleName === "ADMIN" ? styles.adminBadge : styles.userBadge}`}>
                             {r?.roleName === "ADMIN" ? "Admin" : "User"}
                           </span>
                             ))}
@@ -218,13 +194,20 @@ export default function AdminPage() {
                             {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                           </td>
                           <td className={styles.actionsCell}>
-                            <button className={styles.editBtn}   onClick={() => openEdit(u)}    title="Edit user">Edit</button>
-                            <button className={styles.historyBtn} onClick={() => openHistory(u)} title="View analyses">History</button>
+                            <button className={styles.editBtn}
+                                    onClick={() => openEdit(u)}
+                                    title="Edit user">
+                              Edit
+                            </button>
+                            <button className={styles.historyBtn}
+                                    onClick={() => navigate(`/admin/history/${u.username}`)}
+                                    title="View analyses">
+                              History
+                            </button>
                             <button className={styles.deleteBtn}
                                     onClick={() => handleDelete(u.id)}
                                     disabled={isMe || deleting}
-                                    title={isMe ? "Cannot delete yourself" : "Delete user"}
-                            >
+                                    title={isMe ? "Cannot delete yourself" : "Delete user"}>
                               {deleting ? "…" : "Delete"}
                             </button>
                           </td>
@@ -236,7 +219,7 @@ export default function AdminPage() {
               </div>
           )}
 
-          {/* ── Edit user modal ───────────────────────────────────────────── */}
+          {/* ── Edit user modal ──────────────────────────────────────────────── */}
           {editUser && (
               <div className={styles.modalOverlay} onClick={() => setEditUser(null)}>
                 <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -253,59 +236,14 @@ export default function AdminPage() {
                       </select>
                     </label>
                     <div className={styles.modalActions}>
-                      <button type="button" className={styles.cancelBtn} onClick={() => setEditUser(null)}>Cancel</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditUser(null)}>
+                        Cancel
+                      </button>
                       <button type="submit" className={styles.submitBtn} disabled={saving}>
                         {saving ? "Saving…" : "Save Changes"}
                       </button>
                     </div>
                   </form>
-                </div>
-              </div>
-          )}
-
-          {/* ── History modal ─────────────────────────────────────────────── */}
-          {historyUser && (
-              <div className={styles.modalOverlay} onClick={() => setHistoryUser(null)}>
-                <div className={styles.modal} style={{ maxWidth: "800px", width: "95%" }}
-                     onClick={(e) => e.stopPropagation()}>
-                  <h3 className={styles.modalTitle}>Analysis History — {historyUser.username}</h3>
-
-                  {historyLoading ? (
-                      <div className={styles.loading}>Loading…</div>
-                  ) : historyItems.length === 0 ? (
-                      <p style={{ color: "#475569" }}>No analyses yet.</p>
-                  ) : (
-                      <div className={styles.list}>
-                        {historyItems.map((item) => {
-                          const verdict    = item.finalPrediction ?? item.verdict;
-                          const filename   = item.originalFilename ?? item.filename;
-                          const analyzedAt = item.analyzedAt ?? item.uploadedAt;
-                          const id         = item.analysisId ?? item.id;
-                          return (
-                              <div key={id} className={styles.historyRow}>
-                                <div className={styles.historyRowHeader}
-                                     onClick={() => setExpandedId((prev) => prev === id ? null : id)}
-                                     style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "12px", padding: "8px 0" }}
-                                >
-                          <span className={verdict === "REAL" ? styles.real : styles.fake}
-                                style={{ fontWeight: 600 }}>
-                            {verdict === "REAL" ? "✅ REAL" : "🚨 FAKE"}
-                          </span>
-                                  <span style={{ fontSize: "0.9rem" }}>{filename}</span>
-                                  <span style={{ color: "#475569", fontSize: "0.8rem", marginLeft: "auto" }}>
-                            {analyzedAt ? new Date(analyzedAt).toLocaleString() : "—"}
-                          </span>
-                                  <span>{expandedId === id ? "▲" : "▼"}</span>
-                                </div>
-                                {expandedId === id && <ResultCard result={item} />}
-                              </div>
-                          );
-                        })}
-                      </div>
-                  )}
-
-                  <button className={styles.cancelBtn} style={{ marginTop: "16px" }}
-                          onClick={() => setHistoryUser(null)}>Close</button>
                 </div>
               </div>
           )}

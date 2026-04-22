@@ -87,22 +87,30 @@ export default function UploadPage() {
           />
 
           {selectedFile ? (
-            <div className={styles.fileInfo}>
-              <span className={styles.fileIcon}>🎵</span>
-              <span className={styles.fileName}>{selectedFile.name}</span>
-              <span className={styles.fileSize}>
-                {(selectedFile.size / 1e6).toFixed(2)} MB
-              </span>
-            </div>
+              <div className={styles.fileInfo}>
+                <span className={styles.fileIcon}>🎵</span>
+                <span className={styles.fileName}>{selectedFile.name}</span>
+                <span className={styles.fileSize}>
+      {(selectedFile.size / 1e6).toFixed(2)} MB
+    </span>
+                <button
+                    className={styles.clearBtn}
+                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); clearError(); }}
+                    title="Remove file"
+                >
+                  ✕
+                </button>
+              </div>
           ) : (
             <div className={styles.dropHint}>
               <span className={styles.dropIcon}>📂</span>
               <p>Drag & drop an audio file here</p>
               <p className={styles.dropSub}>
-                or <span className={styles.browse}>browse</span> — WAV, MP3,
-                FLAC, OGG (max 10 MB)
+                or <span className={styles.browse}>browse</span> — WAV, MP3
+                 (max 50 MB)
               </p>
             </div>
+
           )}
         </div>
 

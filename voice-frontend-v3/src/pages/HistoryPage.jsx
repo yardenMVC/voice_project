@@ -12,9 +12,6 @@ import { useEffect, useState } from "react";
 import { useAnalysis } from "../hooks/useAnalysis";
 import ResultCard from "../components/ResultCard";
 import styles from "./HistoryPage.module.css";
-import ErrorBanner from "../components/ErrorBanner.jsx";
-import Metric from "../components/Metric";
-import LoadingState from "../components/LoadingState";
 
 export default function HistoryPage() {
     const { history, error, loadHistory, deleteEntry } = useAnalysis();
@@ -35,7 +32,7 @@ export default function HistoryPage() {
             <div className={styles.container}>
                 <h1 className={styles.heading}>Analysis History</h1>
 
-                <ErrorBanner message={error} />
+                {error && <div className={styles.errorBanner}>⚠️ {error}</div>}
 
                 {history.length === 0 ? (
                     <div className={styles.empty}>
@@ -114,6 +111,25 @@ export default function HistoryPage() {
                         })}
                     </div>
                 )}
+            </div>
+        </main>
+    );
+}
+
+function Metric({ label, value, mono }) {
+    return (
+        <div className={styles.metric}>
+            <span className={styles.metricLabel}>{label}</span>
+            <span className={`${styles.metricValue} ${mono ? styles.mono : ""}`}>{value}</span>
+        </div>
+    );
+}
+
+function LoadingState() {
+    return (
+        <main className={styles.page}>
+            <div className={styles.container}>
+                <div className={styles.loading}>Loading history…</div>
             </div>
         </main>
     );

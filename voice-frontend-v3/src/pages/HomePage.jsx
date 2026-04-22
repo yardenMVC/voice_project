@@ -66,7 +66,7 @@ export default function HomePage() {
               ) : (
                   <>
                     <Link to="/register" className={styles.btnPrimary}>
-                      Get Started — It's Free
+                      Get Started
                     </Link>
                     <Link to="/login" className={styles.btnSecondary}>
                       Sign In
@@ -108,16 +108,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── CTA strip ─────────────────────────────────────────────────────── */}
-        <section className={styles.ctaStrip}>
-          <h2 className={styles.ctaTitle}>Ready to analyze a voice?</h2>
-          <p className={styles.ctaSub}>Free to use. No credit card required.</p>
-          {user ? (
-              <Link to="/upload" className={styles.btnPrimary}>Upload Audio →</Link>
-          ) : (
-              <Link to="/register" className={styles.btnPrimary}>Create Account →</Link>
-          )}
-        </section>
+
 
       </main>
   );

@@ -3,16 +3,18 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, AdminRoute } from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
-import HomePage        from "./pages/HomePage";
-import AboutPage       from "./pages/AboutPage";
-import HowItWorksPage  from "./pages/HowItWorksPage";
-import StatsPage       from "./pages/StatsPage";
-import UserGuidePage   from "./pages/UserGuidePage";
-import LoginPage       from "./pages/LoginPage";
-import RegisterPage    from "./pages/RegisterPage";
-import UploadPage      from "./pages/UploadPage";
-import HistoryPage     from "./pages/HistoryPage";
-import AdminPage       from "./pages/AdminPage";
+import HomePage             from "./pages/HomePage";
+import AboutPage            from "./pages/AboutPage";
+import HowItWorksPage       from "./pages/HowItWorksPage";
+import ModelStatsPage       from "./pages/ModelStatsPage";
+import LiveStatsPage        from "./pages/LiveStatsPage";
+import UserGuidePage        from "./pages/UserGuidePage";
+import LoginPage            from "./pages/LoginPage";
+import RegisterPage         from "./pages/RegisterPage";
+import UploadPage           from "./pages/UploadPage";
+import HistoryPage          from "./pages/HistoryPage";
+import AdminPage            from "./pages/AdminPage";
+import AdminUserHistoryPage from "./pages/AdminUserHistoryPage";
 
 export default function App() {
   return (
@@ -24,7 +26,8 @@ export default function App() {
             <Route path="/home"         element={<HomePage />} />
             <Route path="/about"        element={<AboutPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
-            <Route path="/stats"        element={<StatsPage />} />
+            <Route path="/stats"        element={<ModelStatsPage />} />
+            <Route path="/stats/live"   element={<LiveStatsPage />} />
             <Route path="/user-guide"   element={<UserGuidePage />} />
             <Route path="/login"        element={<LoginPage />} />
             <Route path="/register"     element={<RegisterPage />} />
@@ -37,7 +40,8 @@ export default function App() {
 
             {/* ── Protected — ROLE_ADMIN only ─────────────────────────── */}
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin"                   element={<AdminPage />} />
+              <Route path="/admin/history/:username" element={<AdminUserHistoryPage />} />
             </Route>
 
             {/* ── Default redirect ────────────────────────────────────── */}

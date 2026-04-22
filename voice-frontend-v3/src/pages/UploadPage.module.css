@@ -170,3 +170,20 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+.clearBtn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 50%;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 0.75rem;
+  height: 22px;
+  width: 22px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s;
+  margin-top: 0.25rem;
+}
+
+.clearBtn:hover { background: rgba(239, 68, 68, 0.25); }

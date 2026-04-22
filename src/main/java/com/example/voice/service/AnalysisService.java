@@ -250,6 +250,7 @@ public class AnalysisService implements IAnalysisService {
                 analysis.getAutoencoderScore(),
                 analysis.getRbmScore(),
                 analysis.getEnsembleScore(),
+                config != null ? config.getThreshold() : null,  // ← הוסף שורה זו
                 features,
                 analysis.getOriginalFilename(),
                 analysis.getCreatedAt(),
