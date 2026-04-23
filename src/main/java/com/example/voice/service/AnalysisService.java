@@ -71,6 +71,7 @@ public class AnalysisService implements IAnalysisService {
             // 3. Persist the analysis
             //    featuresVectorJson stays exactly as Flask sent it: {"MFCC_1": 0.5, ...}
             //    activeFeaturesJson is gone — replaced by the config FK
+            // 3. Persist the analysis (נתונים טכניים בלבד)
             String featuresJson = objectMapper.writeValueAsString(result.getFeaturesVector());
 
             Analysis analysis = Analysis.builder()
@@ -83,22 +84,26 @@ public class AnalysisService implements IAnalysisService {
                     .ensembleScore(result.getEnsembleScore())
                     .featuresVectorJson(featuresJson)
                     .ensembleConfiguration(config)
-                    .processingTimeMs(result.getProcessingTimeMs())
-                    .originalFilename(audioFile.getOriginalFilename())
-                    .build();
+                    .build(); // הסרנו מכאן את הזמן ושם הקובץ
 
             analysisRepository.save(analysis);
 
+            // 4. יצירת לוג היסטוריה מפורט (כאן נשמר המידע ה"חברתי")
             AnalysisLog auditLog = AnalysisLog.builder()
                     .user(user)
                     .analysis(analysis)
+                    .originalFilename(audioFile.getOriginalFilename()) // עובר לכאן
+                    .processingTimeMs(result.getProcessingTimeMs())    // עובר לכאן
+                    .timestamp(java.time.LocalDateTime.now())          // עובר לכאן
                     .build();
+
             analysisLogRepository.save(auditLog);
 
             log.info("Analysis complete for user: {} - prediction: {} - time: {}ms",
                     username, result.getFinalPrediction(), result.getProcessingTimeMs());
 
-            return toResponse(analysis, result.getFeaturesVector(), config);
+            // שים לב: כאן אנחנו שולחים את ה-auditLog ל-toResponse במקום את ה-analysis
+            return toResponse(auditLog, result.getFeaturesVector(), config);
 
         } catch (Exception e) {
             log.error("Analysis failed for user {}: {}", username, e.getMessage());
@@ -107,39 +112,25 @@ public class AnalysisService implements IAnalysisService {
             cleanupTempFile(tempFile);
         }
     }
-
-    // ── getHistoryForUser ─────────────────────────────────────────────────────
-
-    @Override
-    public List<AnalysisResponse> getHistoryForUser(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User", username));
-
-        return analysisRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(a -> {
-                    Map<String, Object> features = parseFeaturesJson(a.getFeaturesVectorJson());
-                    return toResponse(a, features, a.getEnsembleConfiguration());
-                })
-                .toList();
-    }
-
-    // ── getHistoryByUsername ──────────────────────────────────────────────────
-
+    //fetchHistoryInternal
+    // פונקציית העזר שמרכזת את כל הלוגיקה החדשה עם ה-AnalysisLog
     @Override
     public List<AnalysisResponse> getHistoryByUsername(String username) {
+        // 1. מוצאים את המשתמש (או זורקים שגיאה)
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
-        return analysisRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
+        // 2. שולפים את הלוגים מה-DB וממירים ל-DTO
+        return analysisLogRepository.findByUserIdOrderByTimestampDesc(user.getId())
                 .stream()
-                .map(a -> {
-                    Map<String, Object> features = parseFeaturesJson(a.getFeaturesVectorJson());
-                    return toResponse(a, features, a.getEnsembleConfiguration());
+                .map(logEntry -> {
+                    Map<String, Object> features = parseFeaturesJson(
+                            logEntry.getAnalysis().getFeaturesVectorJson()
+                    );
+                    return toResponse(logEntry, features, logEntry.getAnalysis().getEnsembleConfiguration());
                 })
                 .toList();
     }
-
     // ── resolveEnsembleConfiguration ─────────────────────────────────────────
 
     /**
@@ -209,40 +200,28 @@ public class AnalysisService implements IAnalysisService {
      *
      * The frontend receives exactly the same JSON structure as before.
      */
-    private AnalysisResponse toResponse(
-            Analysis analysis,
-            Map<String, Object> features,
-            EnsembleConfiguration config) {
-
+    private AnalysisResponse toResponse(AnalysisLog logEntry, Map<String, Object> features, EnsembleConfiguration config) {
+        Analysis analysis = logEntry.getAnalysis();
         ActiveFeatures activeFeatures = null;
 
         if (config != null) {
-            List<EnsembleFeature> efList =
-                    ensembleFeatureRepository.findByConfigIdWithDefinition(config.getId());
-
+            List<EnsembleFeature> efList = ensembleFeatureRepository.findByConfigIdWithDefinition(config.getId());
             List<FeatureEntry> entries = efList.stream()
                     .map(ef -> {
                         List<String> activeIn = new ArrayList<>();
-                        if (ef.isActiveInAe())  activeIn.add("AE");
+                        if (ef.isActiveInAe()) activeIn.add("AE");
                         if (ef.isActiveInRbm()) activeIn.add("RBM");
                         return new FeatureEntry(
                                 ef.getFeatureDefinition().getFeatureName(),
                                 ef.getFeatureDefinition().getFeatureIndex(),
                                 activeIn
                         );
-                    })
-                    .collect(Collectors.toList());
+                    }).collect(Collectors.toList());
 
-            long aeCount  = efList.stream().filter(EnsembleFeature::isActiveInAe).count();
-            long rbmCount = efList.stream().filter(EnsembleFeature::isActiveInRbm).count();
-
-            activeFeatures = new ActiveFeatures(
-                    52,
-                    (int) aeCount,
-                    (int) rbmCount,
-                    "KS statistic",
-                    entries
-            );
+            activeFeatures = new ActiveFeatures(52,
+                    (int) efList.stream().filter(EnsembleFeature::isActiveInAe).count(),
+                    (int) efList.stream().filter(EnsembleFeature::isActiveInRbm).count(),
+                    "KS statistic", entries);
         }
 
         return new AnalysisResponse(
@@ -251,11 +230,11 @@ public class AnalysisService implements IAnalysisService {
                 analysis.getAutoencoderScore(),
                 analysis.getRbmScore(),
                 analysis.getEnsembleScore(),
-                config != null ? config.getThreshold() : null,  // ← הוסף שורה זו
+                config != null ? config.getThreshold() : null,
                 features,
-                analysis.getOriginalFilename(),
-                analysis.getCreatedAt(),
-                analysis.getProcessingTimeMs(),
+                logEntry.getOriginalFilename(), // נלקח מהלוג
+                logEntry.getTimestamp(),        // נלקח מהלוג
+                logEntry.getProcessingTimeMs(), // נלקח מהלוג
                 activeFeatures
         );
     }

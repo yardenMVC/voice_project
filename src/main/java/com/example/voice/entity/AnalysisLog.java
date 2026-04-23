@@ -33,7 +33,17 @@ public class AnalysisLog {
     @JoinColumn(name = "analysis_id", nullable = false)
     private Analysis analysis;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private LocalDateTime analyzedAt = LocalDateTime.now();
+
+    @Column(name = "timestamp")
+    private java.time.LocalDateTime timestamp;
+
+    // אלו השדות ש"עברו דירה" מה-Analysis ללוג
+    @Column(name = "original_filename")
+    private String originalFilename;
+
+    @Column(name = "processing_time_ms") // זה השם ב-DB
+    private Integer processingTimeMs;
+
+
+
 }

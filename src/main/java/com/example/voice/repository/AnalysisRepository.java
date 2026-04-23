@@ -12,11 +12,7 @@ import java.util.List;
 public interface AnalysisRepository extends JpaRepository<Analysis, Long> {
 
 
-    // User history — ordered newest first
-    List<Analysis> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    // Admin: get history by username
-    List<Analysis> findByUserUsernameOrderByCreatedAtDesc(String username);
 
     // Stats queries
     long countByFinalPrediction(String finalPrediction);
@@ -24,6 +20,5 @@ public interface AnalysisRepository extends JpaRepository<Analysis, Long> {
     @Query("SELECT AVG(a.ensembleScore) FROM Analysis a WHERE a.ensembleScore IS NOT NULL")
     Double avgEnsembleScore();
 
-    @Query("SELECT AVG(a.processingTimeMs) FROM Analysis a WHERE a.processingTimeMs IS NOT NULL")
-    Double avgProcessingTimeMs();
+
 }

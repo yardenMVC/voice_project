@@ -16,7 +16,7 @@ export default function UserGuidePage() {
 
                 {/* ── Step 1 — Register & Login ────────────────────────────────── */}
                 <section style={{ marginBottom: "2.5rem" }}>
-                    <h2 className={styles.sectionTitle}>Step 1 — Create an Account</h2>
+                    <h2 className={styles.sectionTitle}>Step 1 Create an Account</h2>
                     <p className={styles.body}>
                         Click <strong>Register</strong> in the top navigation bar. Enter a username
                         (3–30 characters), a valid email address, and a password of at least 8 characters.
@@ -31,7 +31,7 @@ export default function UserGuidePage() {
 
                 {/* ── Step 2 — Upload ─────────────────────────────────────────── */}
                 <section style={{ marginBottom: "2.5rem" }}>
-                    <h2 className={styles.sectionTitle}>Step 2 — Upload an Audio File</h2>
+                    <h2 className={styles.sectionTitle}>Step 2 Upload an Audio File</h2>
                     <p className={styles.body}>
                         Navigate to the <strong>Upload</strong> page. You can either click the drop zone
                         to open a file browser, or drag and drop a file directly onto it.
@@ -61,7 +61,7 @@ export default function UserGuidePage() {
                 </span>
                             ))}
                             <span style={{ color: "#475569", fontSize: "0.8rem", alignSelf: "center" }}>
-                · Maximum size: 50 MB · Minimum duration: 0.5 seconds
+                · Maximum size: 50 MB · Minimum duration: 0.5 seconds Maximum duration: 30 seconds
               </span>
                         </div>
                     </div>
@@ -74,7 +74,7 @@ export default function UserGuidePage() {
 
                 {/* ── Step 3 — Results ─────────────────────────────────────────── */}
                 <section style={{ marginBottom: "2.5rem" }}>
-                    <h2 className={styles.sectionTitle}>Step 3 — Understanding Your Results</h2>
+                    <h2 className={styles.sectionTitle}>Step 3 Understanding Your Results</h2>
 
                     {/* Verdict */}
                     <h3 className={styles.sectionTitle} style={{ fontSize: "1rem", marginTop: "1.25rem" }}>
@@ -182,7 +182,7 @@ export default function UserGuidePage() {
 
                 {/* ── Step 4 — History ─────────────────────────────────────────── */}
                 <section style={{ marginBottom: "2.5rem" }}>
-                    <h2 className={styles.sectionTitle}>Step 4 — Viewing Your History</h2>
+                    <h2 className={styles.sectionTitle}>Step 4 Viewing Your History</h2>
                     <p className={styles.body}>
                         Every analysis you perform is automatically saved. Navigate to the{" "}
                         <strong>History</strong> page to see all your past analyses, sorted from newest
@@ -199,7 +199,7 @@ export default function UserGuidePage() {
                     padding: "1rem 1.25rem",
                 }}>
                     <p style={{ color: "#fbbf24", fontWeight: 600, margin: "0 0 0.4rem", fontSize: "0.9rem" }}>
-                        ⚠ Important
+                         Important
                     </p>
                     <p style={{ color: "#94a3b8", fontSize: "0.83rem", margin: 0, lineHeight: 1.65 }}>
                         The system is calibrated for high sensitivity — it prefers to flag suspicious

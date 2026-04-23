@@ -1,5 +1,6 @@
 package com.example.voice.controller;
 
+import com.example.voice.repository.AnalysisLogRepository;
 import com.example.voice.repository.AnalysisRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,10 @@ import java.util.Map;
 public class StatsController {
 
     private final AnalysisRepository analysisRepository;
+    private final AnalysisLogRepository analysisLogRepository;
     private final EnsembleConfigurationRepository ensembleConfigRepository;
+
+
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getStats() {
@@ -34,7 +38,8 @@ public class StatsController {
         long fakeCount       = analysisRepository.countByFinalPrediction("FAKE");
         long realCount       = analysisRepository.countByFinalPrediction("REAL");
         Double avgConfidence = analysisRepository.avgEnsembleScore();
-        Double avgProcessingTime = analysisRepository.avgProcessingTimeMs();
+        // שורה תקינה (פנייה למשתנה שהגדרת למעלה):
+        Double avgProcessingTime = analysisLogRepository.getAverageProcessingTime();
 
         EnsembleConfiguration latest = ensembleConfigRepository
                 .findAll()

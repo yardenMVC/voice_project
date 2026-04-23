@@ -42,7 +42,7 @@ public class AnalysisController {
     public ResponseEntity<List<AnalysisResponse>> getHistory(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<AnalysisResponse> history = analysisService.getHistoryForUser(
+        List<AnalysisResponse> history = analysisService.getHistoryByUsername(
                 userDetails.getUsername());
         return ResponseEntity.ok(history);
     }

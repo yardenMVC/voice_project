@@ -10,7 +10,6 @@ import java.util.List;
  */
 public interface IAnalysisService {
     AnalysisResponse analyzeAudio(MultipartFile audioFile, String username);
-    List<AnalysisResponse> getHistoryForUser(String username);
     List<AnalysisResponse> getHistoryByUsername(String username);
     // הוסף את השורה הזו:
     void deleteAnalysis(Long id, String username);

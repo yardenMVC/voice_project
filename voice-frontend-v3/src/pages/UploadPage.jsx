@@ -88,7 +88,7 @@ export default function UploadPage() {
 
           {selectedFile ? (
               <div className={styles.fileInfo}>
-                <span className={styles.fileIcon}>🎵</span>
+                <span className={styles.fileIcon}>voice file</span>
                 <span className={styles.fileName}>{selectedFile.name}</span>
                 <span className={styles.fileSize}>
       {(selectedFile.size / 1e6).toFixed(2)} MB
@@ -98,7 +98,7 @@ export default function UploadPage() {
                     onClick={(e) => { e.stopPropagation(); setSelectedFile(null); clearError(); }}
                     title="Remove file"
                 >
-                  ✕
+                  X
                 </button>
               </div>
           ) : (
@@ -107,7 +107,7 @@ export default function UploadPage() {
               <p>Drag & drop an audio file here</p>
               <p className={styles.dropSub}>
                 or <span className={styles.browse}>browse</span> — WAV, MP3
-                 (max 50 MB)
+                 (max 50 MB) Minimum duration: 0.5 seconds Maximum duration: 30 seconds
               </p>
             </div>
 

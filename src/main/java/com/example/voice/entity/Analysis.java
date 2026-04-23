@@ -42,15 +42,6 @@ public class Analysis {
 
 
     // Processing time from Flask (ms) — used for StatsPage average
-    @Column
-    private Integer processingTimeMs;
-
-    @Column(nullable = false)
-    private String originalFilename;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     // ── REMOVED: activeFeaturesJson ───────────────────────────────────────────
     // Previously stored active features as a redundant JSON blob.
