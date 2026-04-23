@@ -56,6 +56,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "Uploaded file exceeds the maximum allowed size (50 MB)", null);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        // כאן אנחנו לוקחים את ה-Message האמיתי ("User already exists") ושולחים אותו
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
     // ---- 401 Unauthorized ----
 
     @ExceptionHandler(AuthenticationServiceException.class)

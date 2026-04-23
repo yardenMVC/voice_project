@@ -58,4 +58,15 @@ public class AnalysisController {
         List<AnalysisResponse> history = analysisService.getHistoryByUsername(username);
         return ResponseEntity.ok(history);
     }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAnalysis(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // שליחה ל-Service עם ה-ID והשם מה-Token
+        analysisService.deleteAnalysis(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
 }

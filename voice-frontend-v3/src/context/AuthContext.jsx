@@ -1,25 +1,10 @@
-/**
- * AuthContext.jsx — Global authentication state
- *
- * Why memory-only JWT storage?
- *   Storing JWT in localStorage makes it readable by any JavaScript on the page,
- *   including injected XSS payloads.  Keeping it in React state (heap memory) means
- *   it is wiped automatically when the tab closes, and is inaccessible to scripts
- *   outside this module's scope.
- *
- * Token parsing:
- *   We decode the JWT payload (base64url → JSON) to extract `username` and `roles`
- *   without a library.  We do NOT verify the signature on the client — only the
- *   server can verify the signature.  We extract roles purely for UI routing decisions.
- */
-
-import { createContext, useState, useCallback } from "react";
+import { createContext, useState, useCallback, useEffect } from "react";
 import * as authApi from "../api/authApi";
-import { setToken, clearToken } from "../api/client";
+import { setToken, clearToken, getToken } from "../api/client";
 
 export const AuthContext = createContext(null);
 
-/** Decode JWT payload without verifying signature (UI purposes only) */
+/** פענוח Payload של JWT (לצרכי UI בלבד) */
 function parseToken(token) {
   try {
     const payload = token.split(".")[1];
@@ -32,16 +17,43 @@ function parseToken(token) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // user shape: { username: string, roles: string[], sub: string }
+  const [loading, setLoading] = useState(true); // שלב קריטי למניעת ניתוק ב-Refresh
+
+  // פונקציית שחזור המשתמש מה-LocalStorage בטעינה ראשונה
+  const initAuth = useCallback(() => {
+    try {
+      const token = getToken();
+      if (token) {
+        const payload = parseToken(token);
+        if (payload) {
+          setUser({
+            username: payload.sub,
+            roles: payload.roles || [],
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to restore session:", err);
+    } finally {
+      setLoading(false); // חובה להעביר ל-false כדי שהמסך יופיע
+    }
+  }, []);
+
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
   const login = useCallback(async (username, password) => {
     const data = await authApi.login(username, password);
-    setToken(data.accessToken);
+    // שמירת הטוקנים ב-client (וב-LocalStorage דרכו)
+    setToken(data.accessToken, data.refreshToken);
+
     const payload = parseToken(data.accessToken);
-    setUser({
+    const newUser = {
       username: payload?.sub || username,
       roles: payload?.roles || [],
-    });
+    };
+    setUser(newUser);
     return data;
   }, []);
 
@@ -49,22 +61,17 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout();
     } finally {
-      // Always clear local state even if server call fails
       clearToken();
       setUser(null);
     }
   }, []);
 
-  /**
-   * isAdmin is derived from the roles array.
-   * This is used only to show/hide UI elements.
-   * The server independently enforces ROLE_ADMIN on every admin endpoint.
-   */
   const isAdmin = user?.roles?.includes("ROLE_ADMIN") ?? false;
 
+  // החלק הכי חשוב: ה-return שמנגיש את הנתונים לכל האפליקציה
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, login, logout, isAdmin, loading }}>
+        {children}
+      </AuthContext.Provider>
   );
 }

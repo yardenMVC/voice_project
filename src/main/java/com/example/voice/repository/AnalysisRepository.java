@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface AnalysisRepository extends JpaRepository<Analysis, Long> {
 
+
     // User history — ordered newest first
     List<Analysis> findByUserIdOrderByCreatedAtDesc(Long userId);
 

@@ -82,7 +82,7 @@ public class UserService implements IUserService {
     @Override
     public UserDto registerUser(String username, String email, String password) {
         if (userRepository.findByUsername(username).isPresent())
-            throw new IllegalArgumentException("Username already taken: " + username);
+            throw new IllegalArgumentException("User already exists"); // תואם לספר
 
         Role userRole = roleRepository.findByRoleName("USER")
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "USER"));

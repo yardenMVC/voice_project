@@ -12,6 +12,7 @@ import com.example.voice.repository.FeatureDefinitionRepository;
 import com.example.voice.service.interfaces.IAnalysisService;
 import com.example.voice.service.interfaces.IPythonExecutionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import org.springframework.security.access.AccessDeniedException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -303,4 +304,23 @@ public class AnalysisService implements IAnalysisService {
             return Map.of();
         }
     }
-}
+
+    // הוסף את ה-Import הזה בראש הקובץ
+
+    // בתוך המחלקה, הוסף את המתודה:
+    @Override
+    @Transactional // חובה! מבטיח שכל המחיקות (הניתוח והלוגים) יקרו כיחידה אחת
+    public void deleteAnalysis(Long id, String username) {
+        // מחפשים את הניתוח לפי ה-ID שהגיע מה-Frontend
+        Analysis analysis = analysisRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Analysis", id.toString()));
+
+        // בדיקה בסיסית שהמשתמש מוחק את הניתוח שלו
+        if (!analysis.getUser().getUsername().equals(username)) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
+        }
+
+        // מחיקת הניתוח - בגלל ה-Cascade שהוספנו ב-Entity, זה ימחק גם את ה-Logs
+        analysisRepository.delete(analysis);
+    }
+    }

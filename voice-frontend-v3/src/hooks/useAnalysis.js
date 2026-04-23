@@ -71,16 +71,28 @@ export function useAnalysis() {
    * Filters it out locally for instant feedback before server confirms.
    */
   const deleteEntry = useCallback(async (id) => {
-    setHistory((prev) => prev.filter((item) => item.id !== id));
+    if (!id) return;
+
+    // 1. עדכון מהיר של התצוגה (UI) - "מחיקה אופטימית"
+    // אנחנו מסננים את הרשימה כך שכל מה שלא שווה ל-ID שנמחק יישאר
+    setHistory((prev) => prev.filter((item) => (item.analysisId ?? item.id) !== id));
+
     try {
+      // 2. קריאה לשרת ה-Java למחיקה בבסיס הנתונים
       await analysisApi.deleteAnalysis(id);
+      console.log(`Analysis ${id} deleted successfully`);
     } catch (err) {
-      // Rollback not implemented here — a full implementation would call loadHistory()
-      setError(err.message);
+      // 3. אם השרת החזיר שגיאה (למשל אין הרשאה), נחזיר את המצב לקדמותו
+      console.error("Failed to delete:", err);
+      setError("Could not delete analysis. It might be already gone or no permission.");
+      loadHistory(); // טעינה מחדש של הנתונים האמיתיים מהשרת
     }
-  }, []);
+  }, [loadHistory]);
 
   const clearError = useCallback(() => setError(null), []);
 
   return { uploading, result, history, error, upload, loadHistory, deleteEntry, clearError };
+
+
+
 }

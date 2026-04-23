@@ -40,6 +40,18 @@ public class Analysis {
     @Column(columnDefinition = "TEXT")
     private String featuresVectorJson;
 
+
+    // Processing time from Flask (ms) — used for StatsPage average
+    @Column
+    private Integer processingTimeMs;
+
+    @Column(nullable = false)
+    private String originalFilename;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     // ── REMOVED: activeFeaturesJson ───────────────────────────────────────────
     // Previously stored active features as a redundant JSON blob.
     // Now resolved via ensembleConfiguration → ensemble_features join.
@@ -55,14 +67,8 @@ public class Analysis {
     @JoinColumn(name = "ensemble_config_id", nullable = true)
     private EnsembleConfiguration ensembleConfiguration;
 
-    // Processing time from Flask (ms) — used for StatsPage average
-    @Column
-    private Integer processingTimeMs;
+    @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AnalysisLog> analysisLogs;
 
-    @Column(nullable = false)
-    private String originalFilename;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
 }

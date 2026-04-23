@@ -89,9 +89,19 @@ export default function HistoryPage() {
                                                 >
                                                     {expandedId === (item.analysisId ?? item.id) ? "closa" : "view"}
                                                 </button>
+
                                                 <button
                                                     className={styles.deleteBtn}
-                                                    onClick={(e) => { e.stopPropagation(); deleteEntry(item.analysisId ?? item.id); }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // מונע מהשורה להיפתח/להיסגר כשלוחצים על מחיקה
+
+                                                        // הוספת ה-Alert (Confirm)
+                                                        const confirmed = window.confirm("Are you sure you want to delete this analysis?");
+
+                                                        if (confirmed) {
+                                                            deleteEntry(item.analysisId ?? item.id);
+                                                        }
+                                                    }}
                                                     title="Delete this analysis"
                                                 >
                                                     delete

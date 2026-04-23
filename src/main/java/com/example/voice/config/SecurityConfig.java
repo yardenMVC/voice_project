@@ -83,6 +83,8 @@ public class SecurityConfig {
                         // Any authenticated user
                         .requestMatchers("/api/analysis/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/analysis/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

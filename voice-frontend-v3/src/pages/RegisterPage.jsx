@@ -45,12 +45,14 @@ export default function RegisterPage() {
 
     setError(null);
     setLoading(true);
+// בתוך handleSubmit
     try {
       await authApi.register(form.username, form.email, form.password);
-      // After registration redirect to login — user must sign in explicitly
       navigate("/login", { state: { registered: true }, replace: true });
     } catch (err) {
-      setError(err.message);
+      // במקום err.message הישן, ננסה לשלוף את ההודעה המדויקת מהשרת
+      const errorMessage = err.response?.data?.message || err.message || "An unexpected error occurred";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

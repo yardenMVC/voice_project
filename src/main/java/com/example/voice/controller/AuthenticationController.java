@@ -26,16 +26,21 @@ public class AuthenticationController {
     private final IUserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(
-            @Valid @RequestBody AuthenticationRequest request,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<?> login( // שינינו ל-? כדי שנוכל להחזיר גם שגיאה
+                                    @Valid @RequestBody AuthenticationRequest request,
+                                    HttpServletRequest httpRequest) {
 
-        String clientIp = httpRequest.getRemoteAddr();
-        AuthenticationResponse response = authenticationService.login(
-                request.username(), request.password(), clientIp);
-        return ResponseEntity.ok(response);
+        try {
+            String clientIp = httpRequest.getRemoteAddr();
+            AuthenticationResponse response = authenticationService.login(
+                    request.username(), request.password(), clientIp);
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            // כאן אנחנו מחזירים בדיוק את הטקסט שרשום לך בספר
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(java.util.Map.of("message", "Invalid username or password"));
+        }
     }
-
     /**
      * Public registration — always creates ROLE_USER.
      * Uses RegisterRequest (has password) not UserDto (no password).

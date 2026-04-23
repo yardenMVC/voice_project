@@ -8,17 +8,35 @@
 
 import { refresh as refreshApi } from "./authApi";
 
-const BASE_URL =  "http://localhost:8080";
-
-let accessToken  = null;
-let refreshToken = null;
+// client.js המעודכן
+const BASE_URL = "http://localhost:8080";
+// --- תחליף את החלק הזה ---
+let accessToken  = localStorage.getItem("accessToken"); // טוען מהדיסק מיד בטעינה
+let refreshToken = localStorage.getItem("refreshToken");
 let isRefreshing = false;
-let refreshQueue = []; // pending requests waiting for new token
+let refreshQueue = [];
 
-export const setToken        = (access, refresh) => { accessToken = access; refreshToken = refresh; };
-export const getToken        = () => accessToken;
-export const clearToken      = () => { accessToken = null; refreshToken = null; };
-export const setRefreshToken = (t) => { refreshToken = t; };
+export const setToken = (access, refresh) => {
+  accessToken = access;
+  if (access) localStorage.setItem("accessToken", access);
+  else localStorage.removeItem("accessToken");
+
+  if (refresh) {
+    refreshToken = refresh;
+    localStorage.setItem("refreshToken", refresh);
+  }
+};
+
+export const clearToken = () => {
+  accessToken = null;
+  refreshToken = null;
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+};
+// ------------------------
+
+export const getToken = () => accessToken;
+export const getRefreshToken = () => refreshToken;
 
 // ── Core fetch wrapper ─────────────────────────────────────────────────────
 export async function apiFetch(path, options = {}) {
@@ -52,15 +70,26 @@ export async function apiFetch(path, options = {}) {
 
 async function _fetch(path, options = {}) {
   const { _isRetry, ...fetchOptions } = options;
+
+  // 1. הגדרת כותרות ברירת מחדל (JSON)
   const headers = {
     "Content-Type": "application/json",
     ...fetchOptions.headers,
   };
-  if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+  // 2. בדיקה קריטית: אם שלחנו Content-Type: null, נמחק אותו לגמרי.
+  // זה מאפשר לדפדפן להגדיר "multipart/form-data" באופן אוטומטי עבור קבצים.
+  if (fetchOptions.headers && fetchOptions.headers["Content-Type"] === null) {
+    delete headers["Content-Type"];
+  }
+
+  // 3. הוספת טוקן אבטחה
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
 
   return fetch(`${BASE_URL}${path}`, { ...fetchOptions, headers });
 }
-
 async function _tryRefresh() {
   if (isRefreshing) {
     // Queue this request until refresh completes
