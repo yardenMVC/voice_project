@@ -34,7 +34,7 @@ public class AnalysisLog {
     private Analysis analysis;
 
 
-    @Column(name = "timestamp")
+    @Column(name = "timestamp", nullable = false)
     private java.time.LocalDateTime timestamp;
 
     // אלו השדות ש"עברו דירה" מה-Analysis ללוג
