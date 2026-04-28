@@ -4,11 +4,8 @@ import { ProtectedRoute, AdminRoute } from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
 import HomePage             from "./pages/HomePage";
-import AboutPage            from "./pages/AboutPage";
-import HowItWorksPage       from "./pages/HowItWorksPage";
 import ModelStatsPage       from "./pages/ModelStatsPage";
 import LiveStatsPage        from "./pages/LiveStatsPage";
-import UserGuidePage        from "./pages/UserGuidePage";
 import LoginPage            from "./pages/LoginPage";
 import RegisterPage         from "./pages/RegisterPage";
 import UploadPage           from "./pages/UploadPage";
@@ -24,11 +21,8 @@ export default function App() {
           <Routes>
             {/* ── Public ──────────────────────────────────────────────── */}
             <Route path="/home"         element={<HomePage />} />
-            <Route path="/about"        element={<AboutPage />} />
-            <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/stats"        element={<ModelStatsPage />} />
             <Route path="/stats/live"   element={<LiveStatsPage />} />
-            <Route path="/user-guide"   element={<UserGuidePage />} />
             <Route path="/login"        element={<LoginPage />} />
             <Route path="/register"     element={<RegisterPage />} />
 
