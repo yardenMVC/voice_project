@@ -1,12 +1,5 @@
 /**
  * RegisterPage.jsx
- *
- * Client-side rules enforced before the POST is sent:
- *   - username: 3–30 alphanumeric chars
- *   - email: basic format check
- *   - password: minimum 8 chars
- *   - confirmPassword: must match
- * Server re-validates all of these; client checks save the user a round-trip.
  */
 
 import { useState } from "react";
@@ -28,6 +21,17 @@ function validate(form) {
   return null;
 }
 
+function MicIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" x2="12" y1="19" y2="22"/>
+    </svg>
+  );
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate();
 
@@ -45,12 +49,10 @@ export default function RegisterPage() {
 
     setError(null);
     setLoading(true);
-// בתוך handleSubmit
     try {
       await authApi.register(form.username, form.email, form.password);
       navigate("/login", { state: { registered: true }, replace: true });
     } catch (err) {
-      // במקום err.message הישן, ננסה לשלוף את ההודעה המדויקת מהשרת
       const errorMessage = err.response?.data?.message || err.message || "An unexpected error occurred";
       setError(errorMessage);
     } finally {
@@ -62,7 +64,7 @@ export default function RegisterPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}>
-          <span className={styles.logoIcon}>🎙️</span>
+          <span className={styles.logoIcon}><MicIcon /></span>
           <h1 className={styles.logoText}>VOICE</h1>
           <p className={styles.logoSub}>Voice Authenticity Detection System</p>
         </div>

@@ -1,38 +1,169 @@
 /* StatsPage.module.css */
-.page { min-height:calc(100vh - 60px); background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 60%,#16213e 100%); padding:3rem 1rem 4rem; }
-.container { max-width:820px; margin:0 auto; }
-.pageTitle { color:#e2e8f0; font-size:2rem; font-weight:800; margin:0 0 .5rem; }
-.lead { color:#64748b; font-size:.9rem; margin:0 0 2rem; }
-.sectionTitle { color:#e2e8f0; font-size:1.1rem; font-weight:700; margin:0 0 1rem; padding-bottom:.5rem; border-bottom:1px solid rgba(255,255,255,.07); }
-.section { margin-bottom:2.5rem; }
-.loading { color:#475569; text-align:center; padding:3rem; font-size:.95rem; }
-.error { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px; color:#fca5a5; font-size:.875rem; margin-bottom:1.5rem; padding:.75rem 1rem; }
+
+.page {
+  min-height: calc(100vh - 48px);
+  background: var(--bg-base);
+  padding: 3rem 1rem 4rem;
+}
+
+.container { max-width: 820px; margin: 0 auto; }
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.pageTitle {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 .25rem;
+}
+
+.lead { color: var(--text-dim); font-size: .875rem; margin: 0 0 2rem; }
+
+.sectionTitle {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin: 0 0 1rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section { margin-bottom: 2.5rem; }
+
+/* live stats link button */
+.liveLink {
+  background: var(--color-cyan);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #0f0f1a;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .55rem 1.1rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+
+.liveLink:hover { opacity: .82; }
 
 /* metrics */
-.metricsGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2.5rem; }
-.metricCard { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:1.25rem; }
-.fakeCard { border-color:rgba(239,68,68,.2); background:rgba(239,68,68,.04); }
-.realCard { border-color:rgba(34,197,94,.2); background:rgba(34,197,94,.04); }
-.metricValue { font-size:2rem; font-weight:800; color:#e2e8f0; line-height:1; margin-bottom:.4rem; }
-.metricLabel { color:#94a3b8; font-size:.8rem; font-weight:600; }
-.metricSub   { color:#475569; font-size:.72rem; margin-top:.25rem; }
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+}
+
+.metricCard {
+  background: var(--bg-base);
+  padding: 1.25rem;
+}
+
+.fakeCard { background: var(--color-red-dim); }
+.realCard { background: var(--color-green-dim); }
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--color-cyan);
+  line-height: 1;
+  margin-bottom: .4rem;
+}
+
+.metricValueFake  { color: var(--color-red); }
+.metricValueReal  { color: var(--color-green); }
+.metricValueAmber { color: var(--color-amber); }
+.metricValueGreen { color: var(--color-green); }
+.metricValueRed   { color: var(--color-red); }
+
+.metricLabel {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metricSub { color: var(--text-dim); font-size: .68rem; margin-top: .25rem; }
 
 /* ratio bar */
-.ratioBar { height:14px; border-radius:7px; overflow:hidden; display:flex; margin-bottom:.5rem; }
-.ratioFake { background:linear-gradient(90deg,#b91c1c,#f87171); transition:width .5s; }
-.ratioReal { background:linear-gradient(90deg,#16a34a,#4ade80); transition:width .5s; }
-.ratioLabels { display:flex; justify-content:space-between; font-size:.8rem; font-weight:600; }
+.ratioBar {
+  height: 10px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  margin-bottom: .5rem;
+}
 
-/* activity chart */
-.chartWrap { width:100%; overflow-x:auto; }
-.chartSvg  { width:100%; max-width:520px; display:block; }
-.chartLegend { display:flex; align-items:center; gap:4px; font-size:.75rem; color:#64748b; margin-top:6px; }
-.legendDot { display:inline-block; width:8px; height:8px; border-radius:50%; }
+.ratioFake { background: var(--color-red);   transition: width .5s; }
+.ratioReal { background: var(--color-green); transition: width .5s; }
+
+.ratioLabels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ratioLabels > :first-child { color: var(--color-red); }
+.ratioLabels > :last-child  { color: var(--color-green); }
 
 /* file types */
-.fileTypes { display:flex; flex-direction:column; gap:8px; }
-.fileRow { display:flex; align-items:center; gap:10px; }
-.fileLabel { color:#a78bfa; font-size:.8rem; font-weight:700; font-family:monospace; min-width:36px; }
-.fileTrack { flex:1; height:8px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
-.fileFill  { height:100%; background:linear-gradient(90deg,#7c3aed,#06b6d4); border-radius:4px; transition:width .5s; }
-.fileCount { color:#64748b; font-size:.8rem; font-family:monospace; min-width:36px; text-align:right; }
+.fileTypes { display: flex; flex-direction: column; gap: 8px; }
+
+.fileRow { display: flex; align-items: center; gap: 10px; }
+
+.fileLabel {
+  font-family: var(--font-mono);
+  color: var(--color-cyan);
+  font-size: .72rem;
+  font-weight: 700;
+  min-width: 36px;
+}
+
+.fileTrack {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, .05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fileFill {
+  height: 100%;
+  background: var(--color-cyan);
+  border-radius: 2px;
+  transition: width .5s;
+}
+
+.fileCount {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  font-size: .72rem;
+  min-width: 36px;
+  text-align: right;
+}

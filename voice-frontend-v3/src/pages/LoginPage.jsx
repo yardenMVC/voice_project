@@ -1,17 +1,22 @@
 /**
  * LoginPage.jsx
- *
- * Responsibilities:
- *   - Collect username + password
- *   - Delegate auth to useAuth().login (which calls authApi → apiFetch → backend)
- *   - Redirect to / on success
- *   - Show server-returned error message on failure (never expose stack traces)
  */
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import styles from "./Auth.module.css";
+
+function MicIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" x2="12" y1="19" y2="22"/>
+    </svg>
+  );
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -42,7 +47,7 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}>
-          <span className={styles.logoIcon}>🎙️</span>
+          <span className={styles.logoIcon}><MicIcon /></span>
           <h1 className={styles.logoText}>VOICE</h1>
           <p className={styles.logoSub}>Voice Authenticity Detection System</p>
         </div>
