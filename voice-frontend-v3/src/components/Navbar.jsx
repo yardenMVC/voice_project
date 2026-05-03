@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { Mic } from "lucide-react";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
@@ -17,7 +18,7 @@ export default function Navbar() {
   return (
     <nav className={styles.nav}>
       <div className={styles.brand}>
-        <span className={styles.brandIcon}>🎙️</span>
+        <span className={styles.brandIcon}><Mic size={16} className="icon" /></span>
         <span className={styles.brandText}>VOICE</span>
         <span className={styles.brandSub}>Detection System</span>
       </div>

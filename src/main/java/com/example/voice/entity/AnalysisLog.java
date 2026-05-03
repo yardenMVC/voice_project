@@ -37,11 +37,10 @@ public class AnalysisLog {
     @Column(name = "timestamp", nullable = false)
     private java.time.LocalDateTime timestamp;
 
-    // אלו השדות ש"עברו דירה" מה-Analysis ללוג
     @Column(name = "original_filename")
     private String originalFilename;
 
-    @Column(name = "processing_time_ms") // זה השם ב-DB
+    @Column(name = "processing_time_ms")
     private Integer processingTimeMs;
 
 

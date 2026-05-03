@@ -1,28 +1,19 @@
-/**
- * ResultCard.jsx
- *
- * Changes:
- * - AE and RBM scores shown as numbers only (no bar) — different scales
- * - Ensemble score keeps bar (0-1 scale)
- * - FeatureChart shows ALL 52 features from featuresVector directly
- * - Active features (AE/RBM tags) from activeFeatures when available
- * - Features not in activeFeatures shown without tag
- * - Expand/Collapse to show all 52
- */
+
 
 import { useState } from "react";
+import { File, Clock, Zap } from "lucide-react";
 import styles from "./ResultCard.module.css";
 
-const THRESHOLD = 0.30;
+const DEFAULT_THRESHOLD = 0.30;
 
-function confidenceLevel(score, verdict) {
-    const dist = verdict === "FAKE" ? score - THRESHOLD : THRESHOLD - score;
+function confidenceLevel(score, verdict, threshold) {
+    const dist = verdict === "FAKE" ? score - threshold : threshold - score;
     if (dist < 0.15) return { label: "Low confidence",  color: "#f59e0b" };
     if (dist < 0.35) return { label: "Medium confidence", color: "#06b6d4" };
     return              { label: "High confidence",    color: "#4ade80" };
 }
 
-// ── Model Scores ───────────────────────────────────────────────────────────
+// Model Scores
 
 function ModelScoreSection({ ae, rbm, ensemble, threshold }) {
     const thPct = threshold * 100;
@@ -31,29 +22,21 @@ function ModelScoreSection({ ae, rbm, ensemble, threshold }) {
     return (
         <div className={styles.chartWrap}>
 
-            {/* AE — number only */}
+            {/* AE  */}
             <div className={styles.modelRow}>
                 <div className={styles.modelMeta}>
                     <span className={styles.modelLabel}>Autoencoder</span>
-                    <span className={styles.modelDesc}>Reconstruction Error — Delta features</span>
                 </div>
-                <span className={styles.modelDesc} style={{ flex: 1, color: "#475569", fontSize: "0.75rem" }}>
-                    Raw score (not comparable to RBM scale)
-                </span>
                 <span className={styles.scoreNum} style={{ color: "#94a3b8" }}>
                     {ae.toFixed(6)}
                 </span>
             </div>
 
-            {/* RBM — number only */}
+            {/* RBM */}
             <div className={styles.modelRow}>
                 <div className={styles.modelMeta}>
                     <span className={styles.modelLabel}>GaussianRBM</span>
-                    <span className={styles.modelDesc}>Free Energy — MFCC + physiological features</span>
                 </div>
-                <span className={styles.modelDesc} style={{ flex: 1, color: "#475569", fontSize: "0.75rem" }}>
-                    Raw score (not comparable to AE scale)
-                </span>
                 <span className={styles.scoreNum} style={{ color: "#94a3b8" }}>
                     {rbm.toFixed(6)}
                 </span>
@@ -63,7 +46,6 @@ function ModelScoreSection({ ae, rbm, ensemble, threshold }) {
             <div className={styles.modelRow}>
                 <div className={styles.modelMeta}>
                     <span className={`${styles.modelLabel} ${styles.boldLabel}`}>Ensemble</span>
-                    <span className={styles.modelDesc}>Soft Voting — percentile-normalized combination</span>
                 </div>
                 <div className={styles.barTrack}>
                     <div className={styles.thresholdLine} style={{ left: `${thPct}%` }} title={`Threshold: ${threshold}`} />
@@ -203,21 +185,25 @@ function FeatureChart({ featuresVector, activeFeatures }) {
 export default function ResultCard({ result }) {
     const verdict    = result.finalPrediction ?? result.verdict;
     const isReal     = verdict === "REAL";
-    const threshold  = result.threshold ?? THRESHOLD;
+
+    // לוקח את ה-threshold מהתוצאה (מהשרת או מההיסטוריה), אם משום מה אין, ישתמש ב-0.30
+    const threshold  = result.threshold ?? DEFAULT_THRESHOLD;
+
     const ensemble   = result.ensembleScore ?? result.confidence ?? 0;
     const ae         = result.autoencoderScore ?? result.autoencoderError ?? 0;
     const rbm        = result.rbmScore ?? result.rbmError ?? 0;
     const filename   = result.originalFilename ?? result.filename;
     const analyzedAt = result.analyzedAt ?? result.uploadedAt;
     const procTime   = result.processingTimeMs;
-    const conf       = confidenceLevel(ensemble, verdict);
+
+    // מעביר את ה-threshold הדינמי לפונקציה כדי שהיא תחשב את רמת הביטחון באופן מדויק
+    const conf       = confidenceLevel(ensemble, verdict, threshold);
 
     return (
         <div className={`${styles.card} ${isReal ? styles.real : styles.fake}`}>
 
             {/* Verdict */}
             <div className={styles.verdict}>
-                <span className={styles.verdictIcon}>{isReal ? "✅" : "🚨"}</span>
                 <div className={styles.verdictBody}>
                     <div className={styles.verdictLabel}>
                         {isReal ? "Authentic Voice" : "Spoofed / Synthetic Voice"}
@@ -237,10 +223,6 @@ export default function ResultCard({ result }) {
                         ● {conf.label}
                     </div>
                 </div>
-            </div>
-
-            <div className={styles.calibNote}>
-                ⚠ System is calibrated for high sensitivity — prefers to flag suspicious audio as FAKE
             </div>
 
             {/* Model Scores */}
@@ -263,9 +245,9 @@ export default function ResultCard({ result }) {
 
             {/* Meta */}
             <div className={styles.meta}>
-                <span>📁 {filename}</span>
-                {analyzedAt && <span>🕐 {new Date(analyzedAt).toLocaleString()}</span>}
-                {procTime   && <span>⚡ {procTime}ms</span>}
+                <span><File size={16} className="icon" /> {filename}</span>
+                {analyzedAt && <span><Clock size={16} className="icon" /> {new Date(analyzedAt).toLocaleString()}</span>}
+                {procTime   && <span><Zap size={16} className="icon" /> {procTime}ms</span>}
             </div>
         </div>
     );

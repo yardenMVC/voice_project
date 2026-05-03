@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { Mic } from "lucide-react";
 import styles from "./Auth.module.css";
 
 export default function LoginPage() {
@@ -42,7 +43,7 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}>
-          <span className={styles.logoIcon}>🎙️</span>
+          <span className={styles.logoIcon}><Mic size={16} className="icon" /></span>
           <h1 className={styles.logoText}>VOICE</h1>
           <p className={styles.logoSub}>Voice Authenticity Detection System</p>
         </div>

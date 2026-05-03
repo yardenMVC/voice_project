@@ -2,7 +2,7 @@
  * UploadPage.jsx — Core product page
  *
  * Data flow (end-to-end):
- *   1. User drags or selects an audio file (WAV / MP3 / FLAC / OGG, ≤ 10 MB)
+ *   1. User drags or selects an audio file (WAV / MP3 / FLAC / OGG, ≤ 50 MB)
  *   2. handleUpload() calls useAnalysis().upload(file)
  *      → analysisApi.validateAudioFile()  — client-side type+size guard
  *      → POST multipart/form-data to /api/analysis/upload
@@ -21,6 +21,7 @@
 
 import { useState, useRef } from "react";
 import { useAnalysis } from "../hooks/useAnalysis";
+import { FolderOpen, AlertTriangle } from "lucide-react";
 import ResultCard from "../components/ResultCard";
 import styles from "./UploadPage.module.css";
 
@@ -28,28 +29,27 @@ const ACCEPT = ".wav,.mp3";
 
 export default function UploadPage() {
   const { uploading, result, error, upload, clearError } = useAnalysis();
-  const [dragOver, setDragOver] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [dropState, setDropState] = useState({ dragOver: false, file: null });
   const inputRef = useRef(null);
 
   // ── File selection ────────────────────────────────────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) { setSelectedFile(file); clearError(); }
+    if (file) { setDropState((s) => ({ ...s, file })); clearError(); }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file) { setSelectedFile(file); clearError(); }
+    if (file) { setDropState({ dragOver: false, file }); clearError(); }
+    else { setDropState((s) => ({ ...s, dragOver: false })); }
   };
 
   // ── Upload ────────────────────────────────────────────────────────────────
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!dropState.file) return;
     try {
-      await upload(selectedFile);
+      await upload(dropState.file);
     } catch {
       // error is already stored in useAnalysis — nothing more to do here
     }
@@ -66,12 +66,12 @@ export default function UploadPage() {
 
         {/* ── Drop zone ──────────────────────────────────────────────────── */}
         <div
-          className={`${styles.dropzone} ${dragOver ? styles.dragOver : ""} ${
-            selectedFile ? styles.hasFile : ""
+          className={`${styles.dropzone} ${dropState.dragOver ? styles.dragOver : ""} ${
+            dropState.file ? styles.hasFile : ""
           }`}
           onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
+          onDragOver={(e) => { e.preventDefault(); setDropState((s) => ({ ...s, dragOver: true })); }}
+          onDragLeave={() => setDropState((s) => ({ ...s, dragOver: false }))}
           onDrop={handleDrop}
           role="button"
           tabIndex={0}
@@ -86,16 +86,16 @@ export default function UploadPage() {
             style={{ display: "none" }}
           />
 
-          {selectedFile ? (
+          {dropState.file ? (
               <div className={styles.fileInfo}>
                 <span className={styles.fileIcon}>voice file</span>
-                <span className={styles.fileName}>{selectedFile.name}</span>
+                <span className={styles.fileName}>{dropState.file.name}</span>
                 <span className={styles.fileSize}>
-      {(selectedFile.size / 1e6).toFixed(2)} MB
+      {(dropState.file.size / 1e6).toFixed(2)} MB
     </span>
                 <button
                     className={styles.clearBtn}
-                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); clearError(); }}
+                    onClick={(e) => { e.stopPropagation(); setDropState({ dragOver: false, file: null }); clearError(); }}
                     title="Remove file"
                 >
                   X
@@ -103,7 +103,7 @@ export default function UploadPage() {
               </div>
           ) : (
             <div className={styles.dropHint}>
-              <span className={styles.dropIcon}>📂</span>
+              <span className={styles.dropIcon}><FolderOpen size={16} className="icon" /></span>
               <p>Drag & drop an audio file here</p>
               <p className={styles.dropSub}>
                 or <span className={styles.browse}>browse</span> — WAV, MP3
@@ -117,7 +117,7 @@ export default function UploadPage() {
         {/* ── Error ──────────────────────────────────────────────────────── */}
         {error && (
           <div className={styles.errorBanner}>
-            <span>⚠️ {error}</span>
+            <span><AlertTriangle size={16} className="icon" /> {error}</span>
             <button onClick={clearError} className={styles.errorDismiss}>✕</button>
           </div>
         )}
@@ -126,7 +126,7 @@ export default function UploadPage() {
         <button
           className={styles.uploadBtn}
           onClick={handleUpload}
-          disabled={!selectedFile || uploading}
+          disabled={!dropState.file || uploading}
         >
           {uploading ? (
             <>
@@ -138,11 +138,8 @@ export default function UploadPage() {
         </button>
 
         {uploading && (
-          <div className={styles.pipeline}>
-            <PipelineStep label="Feature Extraction  — 52 acoustic features computed" sub="MFCC × 13, Delta × 13, Delta² × 13, Jitter, Shimmer, SNR, Energy…" active />
-            
-            <PipelineStep  label="Model Inference — Autoencoder + GaussianRBM · Soft Voting · Threshold: 0.30" />
-            
+          <div className={styles.pipeline} style={{ alignItems: "center" }}>
+            <span className={styles.spinner} />
           </div>
         )}
 
@@ -150,17 +147,5 @@ export default function UploadPage() {
         {result && !uploading && <ResultCard result={result} />}
       </div>
     </main>
-  );
-}
-
-function PipelineStep({ icon, label, sub, active }) {
-  return (
-    <div className={`${styles.step} ${active ? styles.stepActive : ""}`}>
-      <span>{icon}</span>
-      <div>
-        <div>{label}</div>
-        {sub && <div style={{fontSize:"0.75rem",opacity:.7,marginTop:"2px"}}>{sub}</div>}
-      </div>
-    </div>
   );
 }

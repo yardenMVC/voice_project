@@ -81,6 +81,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), null);
     }
 
+    // ---- 4xx/5xx Flask ML errors ----
+
+    @ExceptionHandler(FlaskAnalysisException.class)
+    public ResponseEntity<Map<String, Object>> handleFlaskError(FlaskAnalysisException ex) {
+        log.error("Flask ML error [{}]: {}", ex.getErrorCode(), ex.getMessage());
+        return buildResponse(ex.getHttpStatus(), ex.getMessage(), ex.getErrorCode());
+    }
+
     // ---- 408 Timeout ----
 
     @ExceptionHandler(TimeoutException.class)

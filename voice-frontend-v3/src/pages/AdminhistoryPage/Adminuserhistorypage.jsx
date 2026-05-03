@@ -5,26 +5,26 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import * as analysisApi from "../api/analysisApi";
-import ResultCard from "../components/ResultCard";
-import ErrorBanner from "../components/ErrorBanner";
-import LoadingState from "../components/LoadingState";
-import styles from "./AdminPage.module.css";
+import { useAsync } from "../../hooks/useAsync.js";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import * as analysisApi from "../../api/analysisApi.js";
+import ResultCard from "../../components/ResultCard.jsx";
+import ErrorBanner from "../../components/ErrorBanner.jsx";
+import LoadingState from "../../components/LoadingState.jsx";
+import styles from "../AdminPage/AdminPage.module.css";
 
 export default function AdminUserHistoryPage() {
     const { username }             = useParams();
     const navigate                 = useNavigate();
     const [items,       setItems]  = useState([]);
-    const [loading,  setLoading]   = useState(true);
-    const [error,      setError]   = useState(null);
+    const { loading, error, run }  = useAsync();
     const [expandedId, setExpanded] = useState(null);
 
     useEffect(() => {
-        analysisApi.getHistoryByUsername(username)
+        run(() => analysisApi.getHistoryByUsername(username))
             .then(setItems)
-            .catch((e) => setError(e.message))
-            .finally(() => setLoading(false));
-    }, [username]);
+            .catch(() => {});
+    }, [username, run]);
 
     return (
         <main className={styles.page}>
@@ -66,7 +66,7 @@ export default function AdminUserHistoryPage() {
                                     >
                     <span className={verdict === "REAL" ? styles.real : styles.fake}
                           style={{ fontWeight: 600 }}>
-                      {verdict === "REAL" ? "✅ REAL" : "🚨 FAKE"}
+                      {verdict === "REAL" ? <><CheckCircle size={16} className="icon" /> REAL</> : <><AlertTriangle size={16} className="icon" /> FAKE</>}
                     </span>
                                         <span style={{ fontSize: "0.9rem", color: "#e2e8f0" }}>{filename}</span>
                                         <span style={{ color: "#475569", fontSize: "0.8rem", marginLeft: "auto" }}>

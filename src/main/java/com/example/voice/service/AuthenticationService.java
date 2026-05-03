@@ -14,17 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-/**
- * AuthenticationService.
- *
- * SOLID:
- * - SRP: Handles only login, logout, and token refresh flows.
- * - DIP: Depends on interfaces (ITokenService, ITokenBlacklistService, UserDetailsService).
- * - OCP: New auth strategies (e.g., OAuth) can be added via new IAuthenticationService impls.
- *
- * IP address is passed as a parameter from the controller (extracted from HttpServletRequest).
- * It is NOT part of the DTO - clean separation of concerns.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -49,7 +38,7 @@ public class AuthenticationService implements IAuthenticationService {
         String refreshJwtId = UUID.randomUUID().toString();
 
         String accessToken  = tokenService.generateAccessToken(userDetails, accessJwtId);
-        String refreshToken = tokenService.generateRefreshToken(userDetails, refreshJwtId);
+        String refreshToken = tokenService.generateRefreshToken(userDetails, refreshJwtId, clientIp);
 
         log.info("Login successful for user: {}", username);
         return new AuthenticationResponse(accessToken, refreshToken);
@@ -67,6 +56,12 @@ public class AuthenticationService implements IAuthenticationService {
                 throw new AuthenticationServiceException("Refresh token is invalid or expired");
             }
 
+            String tokenIp = tokenService.extractClaim(refreshToken, "ip");
+            if (tokenIp != null && !tokenIp.equals(clientIp)) {
+                log.warn("Refresh token IP mismatch: token={} request={} user={}", tokenIp, clientIp, username);
+                throw new AuthenticationServiceException("Token was issued to a different IP address");
+            }
+
             String oldJwtId = tokenService.extractJwtId(refreshToken);
             tokenBlacklistService.blacklist(oldJwtId);
 
@@ -75,7 +70,7 @@ public class AuthenticationService implements IAuthenticationService {
 
             return new AuthenticationResponse(
                     tokenService.generateAccessToken(userDetails, newAccessJwtId),
-                    tokenService.generateRefreshToken(userDetails, newRefreshJwtId)
+                    tokenService.generateRefreshToken(userDetails, newRefreshJwtId, clientIp)
             );
 
         } catch (AuthenticationServiceException e) {

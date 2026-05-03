@@ -3,15 +3,15 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, AdminRoute } from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
-import HomePage             from "./pages/HomePage";
-import ModelStatsPage       from "./pages/ModelStatsPage";
-import LiveStatsPage        from "./pages/LiveStatsPage";
+import HomePage             from "./pages/HomePage/HomePage.jsx";
+import ModelStatsPage       from "./pages/ModelstatsPage/Modelstatspage.jsx";
+import LiveStatsPage        from "./pages/LivestatsPage/Livestatspage.jsx";
 import LoginPage            from "./pages/LoginPage";
 import RegisterPage         from "./pages/RegisterPage";
 import UploadPage           from "./pages/UploadPage";
-import HistoryPage          from "./pages/HistoryPage";
-import AdminPage            from "./pages/AdminPage";
-import AdminUserHistoryPage from "./pages/AdminUserHistoryPage";
+import HistoryPage          from "./pages/HistoryPage/HistoryPage.jsx";
+import AdminPage            from "./pages/AdminPage/AdminPage.jsx";
+import AdminUserHistoryPage from "./pages/AdminhistoryPage/Adminuserhistorypage.jsx";
 
 export default function App() {
   return (

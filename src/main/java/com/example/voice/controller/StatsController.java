@@ -2,6 +2,7 @@ package com.example.voice.controller;
 
 import com.example.voice.repository.AnalysisLogRepository;
 import com.example.voice.repository.AnalysisRepository;
+import com.example.voice.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +30,7 @@ public class StatsController {
     private final AnalysisRepository analysisRepository;
     private final AnalysisLogRepository analysisLogRepository;
     private final EnsembleConfigurationRepository ensembleConfigRepository;
-
+    private final EnsembleFeatureRepository ensembleFeatureRepository;
 
 
     @GetMapping
@@ -47,15 +48,30 @@ public class StatsController {
                 .max(Comparator.comparing(EnsembleConfiguration::getRegisteredAt))
                 .orElse(null);
 
+        // Logic to count active models without exposing paths
+        int activeModelsCount = 0;
+        long activeFeaturesCount = 0;
+        if (latest != null) {
+            // Secure model check
+            if (latest.getAeModelPath() != null && !latest.getAeModelPath().isBlank()) activeModelsCount++;
+            if (latest.getRbmModelPath() != null && !latest.getRbmModelPath().isBlank()) activeModelsCount++;
+
+            // CORRECT: Call on the instance (lowercase), not the Class (uppercase)
+            activeFeaturesCount = ensembleFeatureRepository.countByEnsembleConfigurationId(latest.getId());
+        }
+
+
+
         return ResponseEntity.ok(Map.of(
                 "totalAnalyses",       total,
                 "fakeCount",           fakeCount,
                 "realCount",           realCount,
+                "activeModelsCount",   activeModelsCount,
+                "activeFeaturesCount", activeFeaturesCount,
                 "avgConfidence",       avgConfidence != null ? avgConfidence : 0.0,
                 "avgProcessingTimeMs", avgProcessingTime != null ? avgProcessingTime.longValue() : 0L,
-                "threshold",           latest != null ? latest.getThreshold() : 0.30,
-                "aeModelPath",         latest != null ? latest.getAeModelPath() : "—",
-                "rbmModelPath",        latest != null ? latest.getRbmModelPath() : "—"
+                "threshold",           latest != null ? latest.getThreshold() : 0.30
+
         ));
     }
 }

@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 // חשוב: הייבוא הזה חייב להיות מדויק כדי שהשגיאה האדומה תיעלם
-import LoadingState from "./Loadingstate";
+import LoadingState from "./LoadingState";
 
 /**
  * ProtectedRoute — מגן על דפים למשתמשים מחוברים בלבד

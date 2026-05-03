@@ -9,34 +9,44 @@
  */
 
 import { useEffect, useState } from "react";
-import { useAnalysis } from "../hooks/useAnalysis";
-import ResultCard from "../components/ResultCard";
+import { useAnalysis } from "../../hooks/useAnalysis.js";
+import { useAsync } from "../../hooks/useAsync.js";
+import { Mic, CheckCircle, AlertTriangle } from "lucide-react";
+import ResultCard from "../../components/ResultCard.jsx";
+import LoadingState from "../../components/LoadingState.jsx";
+import ErrorBanner from "../../components/ErrorBanner.jsx";
 import styles from "./HistoryPage.module.css";
 
 export default function HistoryPage() {
     const { history, error, loadHistory, deleteEntry } = useAnalysis();
-    const [loading,    setLoading]    = useState(true);
+    const { loading, run } = useAsync();
     const [expandedId, setExpandedId] = useState(null);
 
     useEffect(() => {
-        loadHistory().finally(() => setLoading(false));
-    }, [loadHistory]);
+        run(() => loadHistory()).catch(() => {});
+    }, [loadHistory, run]);
 
     const toggleExpand = (id) =>
         setExpandedId((prev) => (prev === id ? null : id));
 
-    if (loading) return <LoadingState />;
+    if (loading) return (
+        <main className={styles.page}>
+            <div className={styles.container}>
+                <LoadingState message="Loading history…" />
+            </div>
+        </main>
+    );
 
     return (
         <main className={styles.page}>
             <div className={styles.container}>
                 <h1 className={styles.heading}>Analysis History</h1>
 
-                {error && <div className={styles.errorBanner}>⚠️ {error}</div>}
+                <ErrorBanner message={error} />
 
                 {history.length === 0 ? (
                     <div className={styles.empty}>
-                        <span className={styles.emptyIcon}>🎙️</span>
+                        <span className={styles.emptyIcon}><Mic size={16} className="icon" /></span>
                         <p>No analyses yet. Upload an audio file to get started.</p>
                     </div>
                 ) : (
@@ -63,7 +73,7 @@ export default function HistoryPage() {
                                     >
                                         <div className={styles.rowLeft}>
                       <span className={`${styles.verdict} ${verdict === "REAL" ? styles.real : styles.fake}`}>
-                        {verdict === "REAL" ? "✅ REAL" : "🚨 FAKE"}
+                        {verdict === "REAL" ? <><CheckCircle size={16} className="icon" /> REAL</> : <><AlertTriangle size={16} className="icon" /> FAKE</>}
                       </span>
                                             <div className={styles.fileInfo}>
                                                 <span className={styles.fileName}>{filename}</span>
@@ -87,17 +97,14 @@ export default function HistoryPage() {
                                                     onClick={(e) => { e.stopPropagation(); toggleExpand(item.analysisId ?? item.id); }}
                                                     title={expandedId === (item.analysisId ?? item.id) ? "Collapse" : "Expand details"}
                                                 >
-                                                    {expandedId === (item.analysisId ?? item.id) ? "closa" : "view"}
+                                                    {expandedId === (item.analysisId ?? item.id) ? "Close" : "view"}
                                                 </button>
 
                                                 <button
                                                     className={styles.deleteBtn}
                                                     onClick={(e) => {
-                                                        e.stopPropagation(); // מונע מהשורה להיפתח/להיסגר כשלוחצים על מחיקה
-
-                                                        // הוספת ה-Alert (Confirm)
+                                                        e.stopPropagation();
                                                         const confirmed = window.confirm("Are you sure you want to delete this analysis?");
-
                                                         if (confirmed) {
                                                             deleteEntry(item.analysisId ?? item.id);
                                                         }
@@ -132,15 +139,5 @@ function Metric({ label, value, mono }) {
             <span className={styles.metricLabel}>{label}</span>
             <span className={`${styles.metricValue} ${mono ? styles.mono : ""}`}>{value}</span>
         </div>
-    );
-}
-
-function LoadingState() {
-    return (
-        <main className={styles.page}>
-            <div className={styles.container}>
-                <div className={styles.loading}>Loading history…</div>
-            </div>
-        </main>
     );
 }

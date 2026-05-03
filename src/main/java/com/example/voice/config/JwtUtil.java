@@ -13,23 +13,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * JwtUtil - implements ITokenService.
- *
- * SOLID changes from original:
- * - SRP: No longer handles authentication logic, only token lifecycle.
- * - DIP: Implements ITokenService interface; callers depend on the interface.
- * - OCP: Token configuration (expiration) comes from JwtConfig (externalized).
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -42,12 +33,12 @@ public class JwtUtil implements ITokenService {
 
     @PostConstruct
     public void init() {
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            this.secretKey = Keys.hmacShaKeyFor(keyGen.generateKey().getEncoded());
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Failed to initialize JWT secret key", e);
+        String secret = jwtConfig.getSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "jwt.secret is not set in application.properties — refusing to start with a random key");
         }
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     // ==========================================
@@ -60,6 +51,7 @@ public class JwtUtil implements ITokenService {
         claims.put("roles", userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
+        claims.put("type", "access");
 
         return Jwts.builder()
                 .claims(claims)
@@ -73,7 +65,19 @@ public class JwtUtil implements ITokenService {
 
     @Override
     public String generateRefreshToken(UserDetails userDetails, String jwtId) {
+        return generateRefreshToken(userDetails, jwtId, null);
+    }
+
+    @Override
+    public String generateRefreshToken(UserDetails userDetails, String jwtId, String clientIp) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "refresh");
+        if (clientIp != null) {
+            claims.put("ip", clientIp);
+        }
+
         return Jwts.builder()
+                .claims(claims)
                 .subject(userDetails.getUsername())
                 .id(jwtId)
                 .issuedAt(new Date())
@@ -83,16 +87,52 @@ public class JwtUtil implements ITokenService {
     }
 
     @Override
+    public boolean validateAccessToken(String token, UserDetails userDetails) {
+        return validateTokenInternal(token, userDetails, true);
+    }
+
+    @Override
     public boolean validateToken(String token, UserDetails userDetails) {
+        return validateTokenInternal(token, userDetails, false);
+    }
+
+    private boolean validateTokenInternal(String token, UserDetails userDetails, boolean enforceAccessType) {
         try {
-            String username = extractUsername(token);
-            String jwtId    = extractJwtId(token);
+            Claims claims = extractAllClaims(token);
+            String username = claims.getSubject();
+            String jwtId = claims.getId();
 
             if (tokenBlacklistService.isBlacklisted(jwtId)) {
                 log.warn("Token {} is blacklisted", jwtId);
                 return false;
             }
-            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+
+            if (!username.equals(userDetails.getUsername())) {
+                return false;
+            }
+
+            if (claims.getExpiration().before(new Date())) {
+                return false;
+            }
+
+            long durationMs = claims.getExpiration().getTime() - claims.getIssuedAt().getTime();
+            String type = (String) claims.get("type");
+
+            if (enforceAccessType) {
+                if (!"access".equals(type) || durationMs > JwtConfig.ACCESS_MAX_DURATION_MS) {
+                    log.warn("Refresh token presented where access token expected");
+                    return false;
+                }
+            } else {
+                if ("access".equals(type) && durationMs > JwtConfig.ACCESS_MAX_DURATION_MS) {
+                    return false;
+                }
+                if ("refresh".equals(type) && durationMs <= JwtConfig.ACCESS_MAX_DURATION_MS) {
+                    return false;
+                }
+            }
+
+            return true;
         } catch (ExpiredJwtException e) {
             log.warn("Token expired: {}", e.getMessage());
             return false;
@@ -117,6 +157,12 @@ public class JwtUtil implements ITokenService {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    @Override
+    public String extractClaim(String token, String claimName) {
+        Object value = extractAllClaims(token).get(claimName);
+        return value != null ? value.toString() : null;
+    }
+
     // ==========================================
     // Private helpers
     // ==========================================
@@ -131,9 +177,5 @@ public class JwtUtil implements ITokenService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
     }
 }

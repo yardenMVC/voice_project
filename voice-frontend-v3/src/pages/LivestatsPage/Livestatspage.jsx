@@ -1,14 +1,16 @@
-// ─────────────────────────────────────────────────────────────────────────────
+
 // LiveStatsPage.jsx — /stats/live
 // Analysis activity — refreshes every 5 seconds
-// ─────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useCallback } from "react";
+import { useAsync } from "../../hooks/useAsync.js";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 import styles from "./StatsPage.module.css";
-import ErrorBanner from "../components/ErrorBanner";
-import LoadingState from "../components/LoadingState";
+import ErrorBanner from "../../components/ErrorBanner.jsx";
+import LoadingState from "../../components/LoadingState.jsx";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const BASE = import.meta.env.VITE_API_URL ;
 const POLL_INTERVAL = 5000;
 
 async function fetchStats() {
@@ -18,22 +20,20 @@ async function fetchStats() {
 }
 
 export default function LiveStatsPage() {
-    const [stats,   setStats]   = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error,   setError]   = useState(null);
+    const [stats, setStats] = useState(null);
+    const { loading, error, setError, run } = useAsync();
 
-    const load = () => {
+    const poll = useCallback(() => {
         fetchStats()
             .then(setStats)
-            .catch((e) => setError(e?.message ?? "Failed to load"))
-            .finally(() => setLoading(false));
-    };
+            .catch((e) => setError(e?.message ?? "Failed to load"));
+    }, [setError]);
 
     useEffect(() => {
-        load();
-        const interval = setInterval(load, POLL_INTERVAL);
+        run(() => fetchStats()).then(setStats).catch(() => {});
+        const interval = setInterval(poll, POLL_INTERVAL);
         return () => clearInterval(interval);
-    }, []);
+    }, [run, poll]);
 
     const fakeRate = stats && stats.totalAnalyses > 0
         ? ((stats.fakeCount / stats.totalAnalyses) * 100).toFixed(1)
@@ -111,9 +111,9 @@ export default function LiveStatsPage() {
                                      title={`REAL: ${(100 - parseFloat(fakeRate)).toFixed(1)}%`} />
                             </div>
                             <div className={styles.ratioLabels}>
-                                <span style={{ color: "#f87171" }}>🚨 FAKE — {fakeRate}%</span>
+                                <span style={{ color: "#f87171" }}><AlertTriangle size={16} className="icon" /> FAKE — {fakeRate}%</span>
                                 <span style={{ color: "#4ade80" }}>
-                  ✅ REAL — {(100 - parseFloat(fakeRate)).toFixed(1)}%
+                  <CheckCircle size={16} className="icon" /> REAL — {(100 - parseFloat(fakeRate)).toFixed(1)}%
                 </span>
                             </div>
                         </section>

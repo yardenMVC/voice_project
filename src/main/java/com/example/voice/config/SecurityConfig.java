@@ -33,7 +33,7 @@ public class SecurityConfig {
     @Value("${security.public-paths:/api/auth/login,/api/auth/register,/api/auth/refresh-token}")
     private String publicPaths;
 
-    @Value("${cors.allowed-origins:http://localhost:5173}")
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private String allowedOrigins;
 
     @Bean

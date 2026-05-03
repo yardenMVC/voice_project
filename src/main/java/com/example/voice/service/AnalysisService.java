@@ -284,22 +284,20 @@ public class AnalysisService implements IAnalysisService {
         }
     }
 
-    // הוסף את ה-Import הזה בראש הקובץ
-
-    // בתוך המחלקה, הוסף את המתודה:
     @Override
-    @Transactional // חובה! מבטיח שכל המחיקות (הניתוח והלוגים) יקרו כיחידה אחת
+    @Transactional
     public void deleteAnalysis(Long id, String username) {
-        // מחפשים את הניתוח לפי ה-ID שהגיע מה-Frontend
         Analysis analysis = analysisRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis", id.toString()));
 
-        // בדיקה בסיסית שהמשתמש מוחק את הניתוח שלו
-        if (!analysis.getUser().getUsername().equals(username)) {
-            throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
+        boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin && !analysis.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("Unauthorized");
         }
 
-        // מחיקת הניתוח - בגלל ה-Cascade שהוספנו ב-Entity, זה ימחק גם את ה-Logs
         analysisRepository.delete(analysis);
     }
     }

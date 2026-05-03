@@ -31,3 +31,16 @@ export async function uploadAudio(file) {
 export const getHistory = () => apiFetch("/api/analysis/history");
 export const getHistoryByUsername = (username) => apiFetch(`/api/analysis/history/${username}`);
 export const deleteAnalysis = (id) => apiFetch(`/api/analysis/${id}`, { method: "DELETE" });
+export const getFeatureDefinitions = () => apiFetch("/api/features");
+
+// תיקון: התאמה ל-apiFetch ופנייה ל-StatsController ב-Java
+export const getSystemStats = async () => {
+  try {
+    return await apiFetch("/api/stats");
+  } catch (error) {
+    console.error("Error fetching system stats:", error);
+    throw error;
+  }
+};
+// בתוך src/api/analysisApi.js
+export const getFeatureByName = (name) => apiFetch(`/features/${name}`);

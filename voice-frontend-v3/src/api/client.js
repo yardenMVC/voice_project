@@ -105,6 +105,7 @@ async function _tryRefresh() {
     refreshQueue = [];
     return accessToken;
   } catch {
+    clearToken();
     refreshQueue.forEach((resolve) => resolve(null));
     refreshQueue = [];
     return null;

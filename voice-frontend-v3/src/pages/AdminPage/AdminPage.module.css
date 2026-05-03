@@ -48,16 +48,6 @@
 
 .newUserBtn:hover { opacity: 0.85; }
 
-.errorBanner {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 8px;
-  color: #fca5a5;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-}
-
 /* ── Create form ─────────────────────────────────────────────────────────── */
 .createForm {
   background: rgba(255,255,255,0.03);
@@ -155,13 +145,6 @@
 }
 
 /* ── Table ───────────────────────────────────────────────────────────────── */
-.loading {
-  color: #475569;
-  font-size: 0.95rem;
-  padding: 3rem;
-  text-align: center;
-}
-
 .tableWrap {
   background: rgba(255,255,255,0.02);
   border: 1px solid rgba(255,255,255,0.07);
@@ -203,8 +186,6 @@
 
 .usernameCell { color: #e2e8f0; font-weight: 600; }
 .emailCell    { color: #64748b; font-size: 0.82rem; }
-.countCell    { color: #06b6d4; font-family: monospace; }
-.dateCell     { color: #64748b; font-size: 0.82rem; white-space: nowrap; }
 .actionsCell  { white-space: nowrap; }
 
 .youBadge {

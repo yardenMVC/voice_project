@@ -3,65 +3,55 @@
  * History button navigates to /admin/history/:username
  */
 
-import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useEffect, useCallback, useState } from "react";
+import { useAuth } from "../../hooks/useAuth.js";
+import { useAsync } from "../../hooks/useAsync.js";
 import { useNavigate } from "react-router-dom";
-import * as usersApi from "../api/usersApi";
+import * as usersApi from "../../api/usersApi.js";
 import styles from "./AdminPage.module.css";
-import ErrorBanner from "../components/ErrorBanner";
-import LoadingState from "../components/LoadingState";
-
+import ErrorBanner from "../../components/ErrorBanner.jsx";
+import LoadingState from "../../components/LoadingState.jsx";
 const INITIAL_FORM = { username: "", email: "", password: "", role: "ROLE_USER" };
 
 export default function AdminPage() {
   const { user: me } = useAuth();
   const navigate     = useNavigate();
+  const { loading, error, setError, run } = useAsync();
 
   const [users,       setUsers]       = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
-  const [form,        setForm]        = useState(INITIAL_FORM);
-  const [creating,    setCreating]    = useState(false);
-  const [showForm,    setShowForm]    = useState(false);
   const [deletingIds, setDeletingIds] = useState(new Set());
-  const [editUser,    setEditUser]    = useState(null);
-  const [editForm,    setEditForm]    = useState({});
-  const [saving,      setSaving]      = useState(false);
+  const [createState, setCreateState] = useState({ visible: false, form: INITIAL_FORM, saving: false });
+  const [editState,   setEditState]   = useState({ user: null, form: {}, saving: false });
 
   // ── Load users ─────────────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
-    setError(null);
     try {
-      const data = await usersApi.getAll();
+      const data = await run(() => usersApi.getAll());
       setUsers(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } catch {
+      // error handled by run
     }
-  }, []);
+  }, [run]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   // ── Create user ────────────────────────────────────────────────────────────
   const handleCreate = async (e) => {
     e.preventDefault();
-    setCreating(true);
+    setCreateState((s) => ({ ...s, saving: true }));
     setError(null);
     try {
       const newUser = await usersApi.create({
-        username: form.username,
-        email:    form.email,
-        password: form.password,
+        username: createState.form.username,
+        email:    createState.form.email,
+        password: createState.form.password,
         roles:    [],
       });
       setUsers((prev) => [...prev, newUser]);
-      setForm(INITIAL_FORM);
-      setShowForm(false);
+      setCreateState({ visible: false, form: INITIAL_FORM, saving: false });
     } catch (err) {
       setError(err.message);
-    } finally {
-      setCreating(false);
+      setCreateState((s) => ({ ...s, saving: false }));
     }
   };
 
@@ -80,31 +70,31 @@ export default function AdminPage() {
 
   // ── Edit user ──────────────────────────────────────────────────────────────
   const openEdit = (u) => {
-    setEditUser(u);
-    setEditForm({ email: u.email, role: u.roles?.[0] ?? "ROLE_USER" });
+    setEditState({ user: u, form: { email: u.email, role: u.roles?.[0] ?? "ROLE_USER" }, saving: false });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setSaving(true);
+    setEditState((s) => ({ ...s, saving: true }));
     setError(null);
     try {
-      const updated = await usersApi.update(editUser.id, {
-        ...editUser,
-        email: editForm.email,
-        roles: editUser.roles,
+      const updated = await usersApi.update(editState.user.id, {
+        ...editState.user,
+        email: editState.form.email,
+        roles: editState.user.roles,
       });
       setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
-      setEditUser(null);
+      setEditState({ user: null, form: {}, saving: false });
     } catch (err) {
       setError(err.message);
-    } finally {
-      setSaving(false);
+      setEditState((s) => ({ ...s, saving: false }));
     }
   };
 
-  const handleFormChange = (e) => setForm((prev)     => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleEditChange = (e) => setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleFormChange = (e) =>
+    setCreateState((s) => ({ ...s, form: { ...s.form, [e.target.name]: e.target.value } }));
+  const handleEditChange = (e) =>
+    setEditState((s) => ({ ...s, form: { ...s.form, [e.target.name]: e.target.value } }));
 
   return (
       <main className={styles.page}>
@@ -113,41 +103,40 @@ export default function AdminPage() {
           <div className={styles.pageHeader}>
             <div>
               <h1 className={styles.heading}>Admin Panel</h1>
-              <p className={styles.sub}>User management — server enforces ROLE_ADMIN on every request</p>
             </div>
-            <button className={styles.newUserBtn} onClick={() => setShowForm((v) => !v)}>
-              {showForm ? "Cancel" : "+ New User"}
+            <button className={styles.newUserBtn} onClick={() => setCreateState((s) => ({ ...s, visible: !s.visible }))}>
+              {createState.visible ? "Cancel" : "+ New User"}
             </button>
           </div>
 
           <ErrorBanner message={error} />
 
           {/* ── Create user form ────────────────────────────────────────────── */}
-          {showForm && (
+          {createState.visible && (
               <form className={styles.createForm} onSubmit={handleCreate}>
                 <h3 className={styles.formTitle}>Create New User</h3>
                 <div className={styles.formGrid}>
                   <label className={styles.label}>Username
-                    <input className={styles.input} name="username" value={form.username}
+                    <input className={styles.input} name="username" value={createState.form.username}
                            onChange={handleFormChange} required autoFocus />
                   </label>
                   <label className={styles.label}>Email
-                    <input className={styles.input} type="email" name="email" value={form.email}
+                    <input className={styles.input} type="email" name="email" value={createState.form.email}
                            onChange={handleFormChange} required />
                   </label>
                   <label className={styles.label}>Password
-                    <input className={styles.input} type="password" name="password" value={form.password}
+                    <input className={styles.input} type="password" name="password" value={createState.form.password}
                            onChange={handleFormChange} required minLength={8} />
                   </label>
                   <label className={styles.label}>Role
-                    <select className={styles.input} name="role" value={form.role} onChange={handleFormChange}>
+                    <select className={styles.input} name="role" value={createState.form.role} onChange={handleFormChange}>
                       <option value="ROLE_USER">User</option>
                       <option value="ROLE_ADMIN">Admin</option>
                     </select>
                   </label>
                 </div>
-                <button className={styles.submitBtn} type="submit" disabled={creating}>
-                  {creating ? "Creating…" : "Create User"}
+                <button className={styles.submitBtn} type="submit" disabled={createState.saving}>
+                  {createState.saving ? "Creating…" : "Create User"}
                 </button>
               </form>
           )}
@@ -163,8 +152,6 @@ export default function AdminPage() {
                     <th>Username</th>
                     <th>Email</th>
                     <th>Roles</th>
-                    <th>Analyses</th>
-                    <th>Joined</th>
                     <th>Actions</th>
                   </tr>
                   </thead>
@@ -188,10 +175,6 @@ export default function AdminPage() {
                             {r?.roleName === "ADMIN" ? "Admin" : "User"}
                           </span>
                             ))}
-                          </td>
-                          <td className={styles.countCell}>{u.analysisCount ?? "—"}</td>
-                          <td className={styles.dateCell}>
-                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                           </td>
                           <td className={styles.actionsCell}>
                             <button className={styles.editBtn}
@@ -220,27 +203,27 @@ export default function AdminPage() {
           )}
 
           {/* ── Edit user modal ──────────────────────────────────────────────── */}
-          {editUser && (
-              <div className={styles.modalOverlay} onClick={() => setEditUser(null)}>
+          {editState.user && (
+              <div className={styles.modalOverlay} onClick={() => setEditState({ user: null, form: {}, saving: false })}>
                 <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                  <h3 className={styles.modalTitle}>Edit — {editUser.username}</h3>
+                  <h3 className={styles.modalTitle}>Edit — {editState.user.username}</h3>
                   <form onSubmit={handleSave}>
                     <label className={styles.label}>Email
                       <input className={styles.input} type="email" name="email"
-                             value={editForm.email} onChange={handleEditChange} required />
+                             value={editState.form.email} onChange={handleEditChange} required />
                     </label>
                     <label className={styles.label}>Role
-                      <select className={styles.input} name="role" value={editForm.role} onChange={handleEditChange}>
+                      <select className={styles.input} name="role" value={editState.form.role} onChange={handleEditChange}>
                         <option value="ROLE_USER">User</option>
                         <option value="ROLE_ADMIN">Admin</option>
                       </select>
                     </label>
                     <div className={styles.modalActions}>
-                      <button type="button" className={styles.cancelBtn} onClick={() => setEditUser(null)}>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditState({ user: null, form: {}, saving: false })}>
                         Cancel
                       </button>
-                      <button type="submit" className={styles.submitBtn} disabled={saving}>
-                        {saving ? "Saving…" : "Save Changes"}
+                      <button type="submit" className={styles.submitBtn} disabled={editState.saving}>
+                        {editState.saving ? "Saving…" : "Save Changes"}
                       </button>
                     </div>
                   </form>

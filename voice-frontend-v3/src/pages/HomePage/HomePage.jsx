@@ -4,14 +4,14 @@
  */
 
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth.js";
 import styles from "./HomePage.module.css";
 
 const FEATURES = [
   {
 
     title: "52 Acoustic Features",
-    desc: "MFCC, Delta, Jitter, Shimmer, SNR and more — extracted by librosa and Parselmouth from every uploaded file.",
+    desc: "MFCC, Delta, Jitter, Shimmer, SNR and more extracted by librosa and Parselmouth from every uploaded file.",
   },
   {
 
@@ -26,12 +26,12 @@ const FEATURES = [
   {
 
     title: "Full Transparency",
-    desc: "Every decision is auditable — see every feature value and model score for every analysis.",
+    desc: "Every decision is auditable, see every feature value and model score for every analysis.",
   },
   {
 
     title: "KS Feature Selection",
-    desc: "Features are selected per model using the KS statistic — measuring separation power between real and synthetic voice distributions.",
+    desc: "Features are selected per model using the KS statistic, measuring separation power between real and synthetic voice distributions.",
   },
   {
 
@@ -45,8 +45,6 @@ export default function HomePage() {
 
   return (
       <main className={styles.page}>
-
-        {/* ── Hero ──────────────────────────────────────────────────────────── */}
         <section className={styles.hero}>
           <div className={styles.heroInner}>
             <div className={styles.heroBadge}>Voice Authenticity Detection</div>
@@ -76,7 +74,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* decorative waveform */}
           <div className={styles.waveWrap} aria-hidden>
             <svg viewBox="0 0 600 120" className={styles.wave}>
               {Array.from({ length: 60 }, (_, i) => {
@@ -91,7 +88,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Feature grid ──────────────────────────────────────────────────── */}
         <section className={styles.featSection}>
           <h2 className={styles.sectionTitle}>How VOICE Protects You</h2>
           <p className={styles.sectionSub}>
