@@ -1,12 +1,11 @@
 /**
  * authApi.js — Authentication endpoints
  *
- * All auth calls are routed through apiFetch(), which handles Authorization
- * headers and 401 redirects centrally.  The login response carries the JWT
- * access token; AuthContext stores it in memory via setToken().
+ * Tokens are managed as HttpOnly cookies by the backend.
+ * Login/refresh return user info (username, roles) in the response body.
  */
 
-import { apiFetch } from "./client";
+import { apiFetch, rawFetch } from "./client";
 
 export const login = (username, password) =>
     apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
@@ -17,5 +16,5 @@ export const register = (username, email, password) =>
 export const logout = () =>
     apiFetch("/api/auth/logout", { method: "POST" });
 
-export const refresh = (refreshToken) =>
-    apiFetch("/api/auth/refresh-token", { method: "POST", body: JSON.stringify({ refreshToken }) });
+export const me = () =>
+    rawFetch("/api/auth/me");

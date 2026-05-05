@@ -7,11 +7,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-/**
- * CustomUserDetailsService.
- * SRP: Single responsibility - load user from DB for Spring Security.
- * DIP: Implements the UserDetailsService interface from Spring (not a concrete class).
- */
+// CustomUserDetailsService.
+// SRP: Single responsibility - load user from DB for Spring Security.
+// DIP: Implements the UserDetailsService interface from Spring (not a concrete class).
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

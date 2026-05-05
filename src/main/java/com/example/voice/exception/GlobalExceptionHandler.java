@@ -16,21 +16,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-/**
- * GlobalExceptionHandler.
- *
- * SRP: Single place to handle ALL exceptions and convert them to structured JSON.
- * OCP: New exception types can be added with a new @ExceptionHandler method,
- *      without modifying existing handlers.
- *
- * All responses follow the same JSON structure:
- * {
- *   "timestamp": "...",
- *   "status": 404,
- *   "error": "Not Found",
- *   "message": "User not found with id: 5"
- * }
- */
+// GlobalExceptionHandler.
+//
+// SRP: Single place to handle ALL exceptions and convert them to structured JSON.
+// OCP: New exception types can be added with a new @ExceptionHandler method,
+//      without modifying existing handlers.
+//
+// All responses follow the same JSON structure:
+// { "timestamp": "...", "status": 404, "error": "Not Found", "message": "..." }
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -58,7 +51,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
-        // כאן אנחנו לוקחים את ה-Message האמיתי ("User already exists") ושולחים אותו
+        // Forward the actual exception message (e.g. "User already exists") to the client
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
     }
 

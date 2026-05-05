@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -40,8 +41,11 @@ public class AuthenticationService implements IAuthenticationService {
         String accessToken  = tokenService.generateAccessToken(userDetails, accessJwtId);
         String refreshToken = tokenService.generateRefreshToken(userDetails, refreshJwtId, clientIp);
 
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(a -> a.getAuthority()).toList();
+
         log.info("Login successful for user: {}", username);
-        return new AuthenticationResponse(accessToken, refreshToken);
+        return new AuthenticationResponse(accessToken, refreshToken, username, roles);
     }
 
     @Override
@@ -63,14 +67,19 @@ public class AuthenticationService implements IAuthenticationService {
             }
 
             String oldJwtId = tokenService.extractJwtId(refreshToken);
-            tokenBlacklistService.blacklist(oldJwtId);
+            tokenBlacklistService.blacklist(oldJwtId, tokenService.extractExpiration(refreshToken).toInstant());
 
             String newAccessJwtId  = UUID.randomUUID().toString();
             String newRefreshJwtId = UUID.randomUUID().toString();
 
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(a -> a.getAuthority()).toList();
+
             return new AuthenticationResponse(
                     tokenService.generateAccessToken(userDetails, newAccessJwtId),
-                    tokenService.generateRefreshToken(userDetails, newRefreshJwtId, clientIp)
+                    tokenService.generateRefreshToken(userDetails, newRefreshJwtId, clientIp),
+                    username,
+                    roles
             );
 
         } catch (AuthenticationServiceException e) {
@@ -81,8 +90,8 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
-    public void logout(String jwtId) {
-        tokenBlacklistService.blacklist(jwtId);
+    public void logout(String jwtId, java.time.Instant tokenExpiresAt) {
+        tokenBlacklistService.blacklist(jwtId, tokenExpiresAt);
         log.info("Token blacklisted on logout: {}", jwtId);
     }
 }

@@ -12,14 +12,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * AnalysisController.
- *
- * Endpoints:
- *  POST /api/analysis/upload              — submit audio file (USER/ADMIN)
- *  GET  /api/analysis/history             — own history (USER/ADMIN)
- *  GET  /api/analysis/history/{username}  — any user's history (ADMIN only)
- */
+// AnalysisController.
+//
+// Endpoints:
+//  POST /api/analysis/upload              — submit audio file (USER/ADMIN)
+//  GET  /api/analysis/history             — own history (USER/ADMIN)
+//  GET  /api/analysis/history/{username}  — any user's history (ADMIN only)
 @RestController
 @RequestMapping("/api/analysis")
 @RequiredArgsConstructor
@@ -37,7 +35,7 @@ public class AnalysisController {
         return ResponseEntity.ok(response);
     }
 
-    /** Returns the authenticated user's own history. */
+    // Returns the authenticated user's own history.
     @GetMapping("/history")
     public ResponseEntity<List<AnalysisResponse>> getHistory(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -47,10 +45,8 @@ public class AnalysisController {
         return ResponseEntity.ok(history);
     }
 
-    /**
-     * Returns history for any user — ADMIN only.
-     * Security enforced in SecurityConfig: ROLE_ADMIN required.
-     */
+    // Returns history for any user — ADMIN only.
+    // Security enforced in SecurityConfig: ROLE_ADMIN required.
     @GetMapping("/history/{username}")
     public ResponseEntity<List<AnalysisResponse>> getHistoryByUsername(
             @PathVariable String username) {
@@ -65,7 +61,7 @@ public class AnalysisController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // שליחה ל-Service עם ה-ID והשם מה-Token
+        // Delegate to Service with the ID and username from the JWT token
         analysisService.deleteAnalysis(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }

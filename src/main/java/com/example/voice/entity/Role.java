@@ -6,10 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.NonNull;
 
-/**
- * Role entity.
- * SRP: Represents only the role concept in the system.
- */
+// Role entity.
+// SRP: Represents only the role concept in the system.
 @Entity
 @Table(name = "roles")
 @Data

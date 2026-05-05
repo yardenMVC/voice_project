@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-/** DIP: Controllers/Services depend on this interface, not a concrete DAO. */
+// DIP: Controllers/Services depend on this interface, not a concrete DAO.
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 

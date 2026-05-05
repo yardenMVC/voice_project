@@ -11,11 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * DataLoader.
- * SRP: Only responsible for seeding initial DB data on first startup.
- * Guarded by existsBy check to be idempotent (safe to run multiple times).
- */
+// DataLoader.
+// SRP: Only responsible for seeding initial DB data on first startup.
+// Guarded by existsBy check to be idempotent (safe to run multiple times).
 @Component
 @RequiredArgsConstructor
 public class DataLoader implements CommandLineRunner {

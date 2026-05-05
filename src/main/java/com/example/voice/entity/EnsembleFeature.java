@@ -4,21 +4,18 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * EnsembleFeature — join table between EnsembleConfiguration and FeatureDefinition.
- *
- * SRP: Answers exactly one question:
- *      "Which features (from the dictionary) does this model configuration use,
- *       and in which model (AE / RBM / both)?"
- *
- * activeInAe  — true if this feature is in the Autoencoder's input subset
- * activeInRbm — true if this feature is in the RBM's input subset
- *
- * Why not a simple @ManyToMany?
- * A plain join table can't store the extra columns (activeInAe, activeInRbm).
- * Using an explicit entity gives us full control and matches the
- * active_features structure already returned by Flask.
- */
+// EnsembleFeature — join table between EnsembleConfiguration and FeatureDefinition.
+//
+// SRP: Answers exactly one question:
+//      "Which features does this model configuration use, and in which model (AE / RBM / both)?"
+//
+// activeInAe  — true if this feature is in the Autoencoder's input subset
+// activeInRbm — true if this feature is in the RBM's input subset
+//
+// Why not a simple @ManyToMany?
+// A plain join table can't store the extra columns (activeInAe, activeInRbm).
+// Using an explicit entity gives us full control and matches the
+// active_features structure already returned by Flask.
 @Entity
 @Table(name = "ensemble_features",
         uniqueConstraints = @UniqueConstraint(

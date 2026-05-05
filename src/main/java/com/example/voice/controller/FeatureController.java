@@ -8,14 +8,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * FeatureController — public read-only access to the feature dictionary.
- *
- * GET /api/features          → all 52 feature definitions
- * GET /api/features/{name}   → single feature by exact name (e.g. "MFCC_1")
- *
- * No auth required — this is static reference data, not user data.
- */
+// FeatureController — public read-only access to the feature dictionary.
+//
+// GET /api/features          → all 52 feature definitions
+// GET /api/features/{name}   → single feature by exact name (e.g. "MFCC_1")
+//
+// No auth required — this is static reference data, not user data.
 @RestController
 @RequestMapping("/api/features")
 @RequiredArgsConstructor

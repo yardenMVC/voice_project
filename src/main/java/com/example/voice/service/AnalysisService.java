@@ -33,8 +33,7 @@ import org.springframework.security.access.AccessDeniedException;
 @RequiredArgsConstructor
 public class AnalysisService implements IAnalysisService {
 
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3");
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3");
     private static final long MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024L;
 
     private final IPythonExecutionService         pythonExecutionService;
@@ -46,7 +45,6 @@ public class AnalysisService implements IAnalysisService {
     private final EnsembleFeatureRepository       ensembleFeatureRepository;
     private final ObjectMapper                    objectMapper;
 
-    // ── analyzeAudio ──────────────────────────────────────────────────────────
 
     @Override
     public AnalysisResponse analyzeAudio(MultipartFile audioFile, String username) {
@@ -58,20 +56,14 @@ public class AnalysisService implements IAnalysisService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
-        Path tempFile = null;
         try {
-            tempFile = saveToTemp(audioFile);
-
-            // 1. Call Flask ML microservice
-            PythonAnalysisResult result = pythonExecutionService.execute(tempFile);
+            // 1. Forward file directly to Flask (no local temp file needed)
+            PythonAnalysisResult result = pythonExecutionService.execute(audioFile);
 
             // 2. Resolve (or register) the ensemble configuration
             EnsembleConfiguration config = resolveEnsembleConfiguration(result);
 
             // 3. Persist the analysis
-            //    featuresVectorJson stays exactly as Flask sent it: {"MFCC_1": 0.5, ...}
-            //    activeFeaturesJson is gone — replaced by the config FK
-            // 3. Persist the analysis (נתונים טכניים בלבד)
             String featuresJson = objectMapper.writeValueAsString(result.getFeaturesVector());
 
             Analysis analysis = Analysis.builder()
@@ -84,17 +76,17 @@ public class AnalysisService implements IAnalysisService {
                     .ensembleScore(result.getEnsembleScore())
                     .featuresVectorJson(featuresJson)
                     .ensembleConfiguration(config)
-                    .build(); // הסרנו מכאן את הזמן ושם הקובץ
+                    .build();
 
             analysisRepository.save(analysis);
 
-            // 4. יצירת לוג היסטוריה מפורט (כאן נשמר המידע ה"חברתי")
+            // 4. Create audit log
             AnalysisLog auditLog = AnalysisLog.builder()
                     .user(user)
                     .analysis(analysis)
-                    .originalFilename(audioFile.getOriginalFilename()) // עובר לכאן
-                    .processingTimeMs(result.getProcessingTimeMs())    // עובר לכאן
-                    .timestamp(java.time.LocalDateTime.now())          // עובר לכאן
+                    .originalFilename(audioFile.getOriginalFilename())
+                    .processingTimeMs(result.getProcessingTimeMs())
+                    .timestamp(java.time.LocalDateTime.now())
                     .build();
 
             analysisLogRepository.save(auditLog);
@@ -102,25 +94,19 @@ public class AnalysisService implements IAnalysisService {
             log.info("Analysis complete for user: {} - prediction: {} - time: {}ms",
                     username, result.getFinalPrediction(), result.getProcessingTimeMs());
 
-            // שים לב: כאן אנחנו שולחים את ה-auditLog ל-toResponse במקום את ה-analysis
             return toResponse(auditLog, result.getFeaturesVector(), config);
 
         } catch (Exception e) {
             log.error("Analysis failed for user {}: {}", username, e.getMessage());
             throw new RuntimeException("Audio analysis failed: " + e.getMessage(), e);
-        } finally {
-            cleanupTempFile(tempFile);
         }
     }
     //fetchHistoryInternal
-    // פונקציית העזר שמרכזת את כל הלוגיקה החדשה עם ה-AnalysisLog
     @Override
     public List<AnalysisResponse> getHistoryByUsername(String username) {
-        // 1. מוצאים את המשתמש (או זורקים שגיאה)
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
-        // 2. שולפים את הלוגים מה-DB וממירים ל-DTO
         return analysisLogRepository.findByUserIdOrderByTimestampDesc(user.getId())
                 .stream()
                 .map(logEntry -> {
@@ -133,14 +119,13 @@ public class AnalysisService implements IAnalysisService {
     }
     // ── resolveEnsembleConfiguration ─────────────────────────────────────────
 
-    /**
-     * Idempotent: if Flask reports a model_hash we've seen before, reuse the
-     * existing EnsembleConfiguration row. If it's new (model was retrained),
-     * create a new row and map the active features from FeatureDefinition.
-     *
-     * Uses result.getModelHash() — MD5 of best_model.json computed by Flask
-     * at startup. Changes only when a new training run replaces the model files.
-     */
+//
+// Idempotent: if Flask reports a model_hash we've seen before, reuse the
+// existing EnsembleConfiguration row. If it's new (model was retrained),
+// create a new row and map the active features from FeatureDefinition.
+// Uses result.getModelHash() — MD5 of best_model.json computed by Flask
+// at startup. Changes only when a new training run replaces the model files.
+//
     private EnsembleConfiguration resolveEnsembleConfiguration(
             PythonAnalysisResult result) {
 
@@ -191,15 +176,10 @@ public class AnalysisService implements IAnalysisService {
 
     // ── toResponse ────────────────────────────────────────────────────────────
 
-    /**
-     * Builds the AnalysisResponse DTO.
-     *
-     * ActiveFeatures is now built from DB relations
-     * (EnsembleConfiguration → EnsembleFeature → FeatureDefinition)
-     * instead of deserializing activeFeaturesJson.
-     *
-     * The frontend receives exactly the same JSON structure as before.
-     */
+    // Builds the AnalysisResponse DTO.
+    // ActiveFeatures is built from DB relations
+    // (EnsembleConfiguration → EnsembleFeature → FeatureDefinition)
+    // instead of deserializing activeFeaturesJson.
     private AnalysisResponse toResponse(AnalysisLog logEntry, Map<String, Object> features, EnsembleConfiguration config) {
         Analysis analysis = logEntry.getAnalysis();
         ActiveFeatures activeFeatures = null;
@@ -232,9 +212,9 @@ public class AnalysisService implements IAnalysisService {
                 analysis.getEnsembleScore(),
                 config != null ? config.getThreshold() : null,
                 features,
-                logEntry.getOriginalFilename(), // נלקח מהלוג
-                logEntry.getTimestamp(),        // נלקח מהלוג
-                logEntry.getProcessingTimeMs(), // נלקח מהלוג
+                logEntry.getOriginalFilename(), // from audit log
+                logEntry.getTimestamp(),        // from audit log
+                logEntry.getProcessingTimeMs(), // from audit log
                 activeFeatures
         );
     }
@@ -255,25 +235,29 @@ public class AnalysisService implements IAnalysisService {
                     "File exceeds maximum allowed size of 50 MB");
     }
 
-    private Path saveToTemp(MultipartFile file) throws IOException {
-        Path tempDir  = Files.createTempDirectory("voice_analysis_");
-        Path tempFile = tempDir.resolve(
-                System.currentTimeMillis() + "_" + file.getOriginalFilename());
-        Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-        log.debug("Temp file saved: {}", tempFile);
-        return tempFile;
-    }
-
-    private void cleanupTempFile(Path tempFile) {
-        if (tempFile == null) return;
-        try {
-            Files.deleteIfExists(tempFile);
-            Files.deleteIfExists(tempFile.getParent());
-            log.debug("Temp file cleaned up: {}", tempFile);
-        } catch (IOException e) {
-            log.warn("Could not delete temp file {}: {}", tempFile, e.getMessage());
-        }
-    }
+    // ══════════════════════════════════════════════════════════════════════════
+    // OLD: temp file helpers — no longer needed with direct proxy approach.
+    // ══════════════════════════════════════════════════════════════════════════
+    //
+    // private Path saveToTemp(MultipartFile file) throws IOException {
+    //     Path tempDir  = Files.createTempDirectory("voice_analysis_");
+    //     Path tempFile = tempDir.resolve(
+    //             System.currentTimeMillis() + "_" + file.getOriginalFilename());
+    //     Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+    //     log.debug("Temp file saved: {}", tempFile);
+    //     return tempFile;
+    // }
+    //
+    // private void cleanupTempFile(Path tempFile) {
+    //     if (tempFile == null) return;
+    //     try {
+    //         Files.deleteIfExists(tempFile);
+    //         Files.deleteIfExists(tempFile.getParent());
+    //         log.debug("Temp file cleaned up: {}", tempFile);
+    //     } catch (IOException e) {
+    //         log.warn("Could not delete temp file {}: {}", tempFile, e.getMessage());
+    //     }
+    // }
 
     private Map<String, Object> parseFeaturesJson(String json) {
         try {

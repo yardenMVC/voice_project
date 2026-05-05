@@ -13,15 +13,13 @@ import com.example.voice.repository.EnsembleConfigurationRepository;
 import java.util.Comparator;
 import java.util.Map;
 
-/**
- * StatsController — public system-wide statistics.
- * No auth required — aggregate data only, no PII exposed.
- *
- * GET /api/stats → {
- *   totalAnalyses, fakeCount, realCount,
- *   avgConfidence, avgProcessingTimeMs
- * }
- */
+// StatsController — public system-wide statistics.
+// No auth required — aggregate data only, no PII exposed.
+//
+// GET /api/stats → {
+//   totalAnalyses, fakeCount, realCount,
+//   avgConfidence, avgProcessingTimeMs
+// }
 @RestController
 @RequestMapping("/api/stats")
 @RequiredArgsConstructor
@@ -39,7 +37,7 @@ public class StatsController {
         long fakeCount       = analysisRepository.countByFinalPrediction("FAKE");
         long realCount       = analysisRepository.countByFinalPrediction("REAL");
         Double avgConfidence = analysisRepository.avgEnsembleScore();
-        // שורה תקינה (פנייה למשתנה שהגדרת למעלה):
+        // Average processing time from the audit log table
         Double avgProcessingTime = analysisLogRepository.getAverageProcessingTime();
 
         EnsembleConfiguration latest = ensembleConfigRepository

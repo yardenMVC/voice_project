@@ -3,7 +3,7 @@ package com.example.voice.service.interfaces;
 import com.example.voice.dto.UserDto;
 import java.util.List;
 
-/** ISP: User CRUD concerns only. */
+// ISP: User CRUD concerns only.
 
 import java.util.List;
 import com.example.voice.dto.UserDto;
@@ -22,7 +22,7 @@ public interface IUserService {
     void deleteUser(Long id);
 
     // ── Authentication & Registration ─────────────────────────────────────
-    /** Public registration — always assigns ROLE_USER, hashes password. */
+    // Public registration — always assigns ROLE_USER, hashes password.
     UserDto registerUser(String username, String email, String password);
 
 

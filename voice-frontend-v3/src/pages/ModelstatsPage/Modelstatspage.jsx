@@ -131,7 +131,7 @@ import * as analysisApi from "../../api/analysisApi";
 
 // 3. Styles & Components
 import styles from "./Modelstatspage.module.css";
-import LoadingState from "../../components/Loadingstate";
+import LoadingState from "../../components/LoadingState";
 import ErrorBanner from "../../components/ErrorBanner";
 
 /**

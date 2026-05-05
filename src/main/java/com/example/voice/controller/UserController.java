@@ -10,10 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * UserController.
- * DIP: Depends on IUserService interface, not the concrete UserService.
- */
+// UserController.
+// DIP: Depends on IUserService interface, not the concrete UserService.
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

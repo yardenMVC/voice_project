@@ -1,7 +1,10 @@
 package com.example.voice.dto;
 
-/** Immutable response carrying access + refresh tokens. */
+import java.util.List;
+
 public record AuthenticationResponse(
         String accessToken,
-        String refreshToken
+        String refreshToken,
+        String username,
+        List<String> roles
 ) {}

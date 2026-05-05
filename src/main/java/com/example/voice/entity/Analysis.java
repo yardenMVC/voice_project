@@ -49,11 +49,9 @@ public class Analysis {
     // The frontend receives the same ActiveFeatures structure — AnalysisService
     // builds it from the DB relations instead of deserializing a JSON string.
 
-    /**
-     * Links this analysis to the exact model configuration that produced it.
-     * Allows audit: "which model version and threshold were used for this result?"
-     * LAZY fetch — only loaded when AnalysisService explicitly needs it.
-     */
+    // Links this analysis to the exact model configuration that produced it.
+    // Allows audit: "which model version and threshold were used for this result?"
+    // LAZY fetch — only loaded when AnalysisService explicitly needs it.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ensemble_config_id", nullable = true)
     private EnsembleConfiguration ensembleConfiguration;

@@ -12,11 +12,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * User entity.
- * SRP: Handles user identity and Spring Security integration only.
- * Implements UserDetails so it can be used directly by Spring Security (DIP).
- */
+// User entity.
+// SRP: Handles user identity and Spring Security integration only.
+// Implements UserDetails so it can be used directly by Spring Security (DIP).
 @Entity
 @Table(name = "users")
 @Data

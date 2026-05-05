@@ -1,8 +1,11 @@
 package com.example.voice.config;
 
 import com.example.voice.service.interfaces.ITokenService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
@@ -18,14 +21,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * JwtAuthenticationFilter - JWT validation on every request.
- *
- * SOLID changes from original:
- * - OCP: Excluded paths are injected via constructor (configurable), not hardcoded.
- * - DIP: Depends on ITokenService interface, not the JwtUtil concrete class.
- * - SRP: Only responsible for extracting + validating JWT and setting SecurityContext.
- */
+// JwtAuthenticationFilter - JWT validation on every request.
+//
+// OCP: Excluded paths are injected via constructor (configurable), not hardcoded.
+// DIP: Depends on ITokenService interface, not the JwtUtil concrete class.
+// SRP: Only responsible for extracting + validating JWT and setting SecurityContext.
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final List<String> excludedPaths; // OCP: injected, not hardcoded
 
-    /** OCP: New excluded paths can be added via configuration with no code change. */
+    // OCP: New excluded paths can be added via configuration with no code change.
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
@@ -67,6 +67,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
                 return;
             }
+        } catch (ExpiredJwtException ex) {
+            log.debug("Expired JWT for user '{}': {}", ex.getClaims().getSubject(), ex.getMessage());
+            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has expired");
+            return;
+        } catch (JwtException ex) {
+            log.warn("Invalid JWT: {}", ex.getMessage());
+            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+            return;
         } catch (UsernameNotFoundException ex) {
             writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "User not found");
             return;
@@ -80,11 +88,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if (JwtConfig.ACCESS_COOKIE.equals(c.getName())) {
+                    return c.getValue();
+                }
+            }
+        }
         String header = request.getHeader(JwtConfig.HEADER_STRING);
         if (header != null && header.startsWith(JwtConfig.TOKEN_PREFIX)) {
             return header.substring(JwtConfig.TOKEN_PREFIX.length());
         }
-        return null; // No fallback to query param - security best practice
+        return null;
     }
 
     private void writeErrorResponse(HttpServletResponse response, int status, String message) throws IOException {

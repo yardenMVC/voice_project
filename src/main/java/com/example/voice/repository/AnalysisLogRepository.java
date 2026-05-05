@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface AnalysisLogRepository extends JpaRepository<AnalysisLog, Long> {
-    // השורה הזו מאפשרת לשלוף היסטוריה מסודרת מהחדש לישן
+    // Fetches analysis history ordered from newest to oldest
     List<AnalysisLog> findByUserIdOrderByTimestampDesc(Long userId);
 
     @Query("SELECT AVG(al.processingTimeMs) FROM AnalysisLog al WHERE al.processingTimeMs IS NOT NULL")

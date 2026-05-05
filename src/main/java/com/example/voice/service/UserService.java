@@ -100,7 +100,7 @@ public class UserService implements IUserService {
         userRepository.deleteById(id);
     }
 
-    // ── פונקציות עזר ────────────────────────────────────────────────────────
+    // ── Helper functions ────────────────────────────────────────────────────────
     private UserDto saveWithRoles(User user, List<RoleDto> roleDtos) {
         if (roleDtos != null) {
             List<Role> roles = roleDtos.stream()

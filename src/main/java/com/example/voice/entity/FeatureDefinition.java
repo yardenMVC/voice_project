@@ -4,17 +4,15 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * FeatureDefinition — dictionary of all 52 extractable acoustic features.
- *
- * SRP: This entity only represents the static definition of a feature.
- * It is populated once at startup (DataLoader) and never modified.
- *
- * featureName  — the exact technical name used by Python (e.g. "MFCC_1")
- * displayName  — human-readable label for the UI (e.g. "MFCC Coefficient 1")
- * description  — explanation shown to the user in the result card
- * featureIndex — position in the 52-vector (0-based), matches config.py order
- */
+// FeatureDefinition — dictionary of all 52 extractable acoustic features.
+//
+// SRP: This entity only represents the static definition of a feature.
+// It is populated once at startup (DataLoader) and never modified.
+//
+// featureName  — the exact technical name used by Python (e.g. "MFCC_1")
+// displayName  — human-readable label for the UI (e.g. "MFCC Coefficient 1")
+// description  — explanation shown to the user in the result card
+// featureIndex — position in the 52-vector (0-based), matches config.py order
 @Entity
 @Table(name = "feature_definitions",
         uniqueConstraints = @UniqueConstraint(columnNames = "feature_name"))
